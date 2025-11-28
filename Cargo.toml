@@ -1,0 +1,7 @@
+[package]
+name = "nifki-js"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+petite_http = { git = "https://github.com/mk270/petite_http" }
