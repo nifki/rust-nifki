@@ -188,12 +188,19 @@ function loadImagesThen(imageFilenames, callback) {
     }
 }
 
-async function onPageLoad() {
-    const response = await fetch("asm.nfk");
+async function fetchBlob(url) {
+    const response = await fetch(url);
     if (!response.ok) {
-        /// FIXME
+        throw new Error(`Error fetching resource ${url}: ${response.status}`);
     }
-    const code = await response.text();
+    return await response.blob();
+}
+
+async function onPageLoad() {
+    const zipData = await fetchBlob("Rocks.jar");
+    const gameData = await JSZip.loadAsync(zipData);
+    const classPath = "org/sc3d/apt/crazon/gamedata/";
+    const code = await gameData.files[classPath + "asm.nfk"].async("string");
     loadImagesThen(
         [
             "Rocks_rockPNG",
