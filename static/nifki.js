@@ -168,26 +168,6 @@ function run(code, images, properties, canvas) {
     );
 }
 
-function loadImagesThen(imageFilenames, callback) {
-    var counter = imageFilenames.length;
-    var images = {};
-
-    function count() {
-        counter -= 1;
-        if (counter == 0) {
-            callback(images);
-        }
-    }
-
-    for (var i=0; i < imageFilenames.length; i++) {
-        var name = imageFilenames[i];
-        var image = new Image();
-        image.onload = count;
-        image.src = name;
-        images[name] = image;
-    }
-}
-
 async function fetchBlob(url) {
     const response = await fetch(url);
     if (!response.ok) {
@@ -202,17 +182,21 @@ async function onPageLoad() {
     const classPath = "org/sc3d/apt/crazon/gamedata/";
     const code = await gameData.files[classPath + "asm.nfk"].async("string");
     const imageList = (await gameData.files[classPath + "resources.txt"].async("string")).split("\n");
-    if (imageList[imageList.length - 1] === "") { imageList.pop(); }
-    loadImagesThen(
-        imageList,
-        function(images) {
-            run(
-                assemble(code),
-                images,
-                {"w": 384, "h": 384, "msPerFrame": 40},
-                document.getElementById("game")
-            );
-        }
+    const images = {};
+    for (const imageName of imageList) {
+        if (imageName === "") { continue; }
+        const blob = await gameData.files[classPath + imageName].async("blob");
+        var image = new Image();
+        image.src = URL.createObjectURL(blob);
+        await image.decode();
+        images[imageName] = image;
+    }
+
+    run(
+        assemble(code),
+        images,
+        {"w": 384, "h": 384, "msPerFrame": 40},
+        document.getElementById("game")
     );
 }
 

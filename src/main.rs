@@ -20,7 +20,7 @@ impl ph::Route for Nifki {
             let Some(page) = path_iter.next() else {
                 return Err(HttpError::NotFound);
             };
-            let mut path = PathBuf::from("/home/apt1002/nifki/nifki-js");
+            let mut path = PathBuf::from("/home/apt1002/nifki/rust-nifki/static");
             path.push(page);
             return Ok(HttpOkay::File(File::open(path)?));
         }
