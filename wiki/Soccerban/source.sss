@@ -1,0 +1,228 @@
+GLOBAL manPNG = Rocks_manPNG
+GLOBAL rockPNG = Rocks_rockPNG
+GLOBAL diamondPNG = Rocks_diamondPNG
+GLOBAL wallPNG = Rocks_wallPNG
+GLOBAL earthPNG = Rocks_earthPNG
+# ... and also our own floorPNG.
+
+# A maze game.
+
+WHILE TRUE {
+  playUntilWin([
+    "##########",
+    "#        #",
+    "# O    O #",
+    "#        #",
+    "#   ::   #",
+    "#   ::   #",
+    "#        #",
+    "# O    O #",
+    "#    A   #",
+    "##########"
+  ])
+
+  playUntilWin([
+    "#####",
+    "#AO:#",
+    "#####"
+  ])
+
+  playUntilWin([
+    "#######",
+    "# O:  #",
+    "#  :O #",
+    "## #  #",
+    "# :#O #",
+    "#  A  #",
+    "#######"
+  ])
+  
+  # Add new levels here.
+  
+  WHILE KEYS.Space { WAIT }
+  CLS
+  RESIZE WINDOW TO (31, 31)
+  MOVE WINDOW TO (-2, -10)
+  FOR y=row IN [
+    "        +++  +  +++",
+    "        +  + + +   ",
+    "        +++  + + ++",
+    "        +  + + +  +",
+    "        +++  +  +++",
+    "",
+    "+   + + +  + +  + ++++ +++ ",
+    "+   + + ++ + ++ + +    +  +",
+    "+ + + + + ++ + ++ +++  +++ ",
+    "++ ++ + +  + +  + +    +  +",
+    "+   + + +  + +  + ++++ +  +"
+  ] {
+    FOR x=cell IN row {
+      IF cell=="+" { MOVE SPRITE (diamondPNG) SIZE (1, 1) TO (x, y) }
+    }
+  }
+  WHILE NOT KEYS.Space { WAIT }
+  CLS
+}
+
+# Plays the same level repeatedly until the player solves it.
+DEF playUntilWin(map) {
+  WHILE NOT playLevel(map) {}
+}
+
+# Plays a single level, displays a success or failure screen, and returns TRUE
+# for success and FALSE for failure.
+DEF playLevel(map) {
+  RESIZE WINDOW TO (16, 16)
+
+  # Define the mapping of characters to pictures.
+  pictures = []
+  pictures[" "] = floorPNG
+  pictures["A"] = floorPNG # This marks the start position.
+  pictures[":"] = earthPNG
+  pictures["+"] = diamondPNG
+  pictures["O"] = rockPNG
+  pictures["#"] = wallPNG
+
+  # Construct sprites for the map, count diamonds, and find the start position.
+  bgSprites = []
+  numDiamonds = 0
+
+  FOR y=row IN map {
+
+    bgSprites[y] = []
+    FOR x=char IN row {
+      sprite = SPRITE (pictures[char]) SIZE (1, 1)
+      MOVE sprite TO (x, y)
+      bgSprites[y][x] = sprite
+      IF char == "A" {
+        manX = x
+        manY = y
+      } ELSE {
+        IF char == ":" {
+          numDiamonds = numDiamonds + 1
+        }
+      }
+    }
+  }
+
+  # Construct a sprite for the man.
+  man = SPRITE (manPNG) SIZE (1, 1)
+
+  # Game loop.
+  dx = 0
+  dy = 0
+  manCount = 0.0
+  bgCount = 0
+  waitup = 0
+
+  WHILE numDiamonds > 0 AND NOT KEYS.Escape {
+    # Display a frame.
+    MOVE man TO (manX - dx*manCount, manY - dy*manCount)
+    MOVE WINDOW TO (man.X +0.5 - WINDOW.W/2, man.Y +0.5 - WINDOW.H/2)
+    SET WINDOW.B = (bgCount / 20) + 0.3
+    WAIT
+
+    # Read the keyboard, if the man is exactly in a square.
+    IF manCount == 0 {
+      WHILE waitup > 0 AND (
+        KEYS.LeftArrow OR KEYS.RightArrow OR KEYS.UpArrow OR KEYS.DownArrow
+      ) {
+        waitup = waitup - 1
+        WAIT
+      }
+      IF KEYS.LeftArrow  { dx = -1 }
+      IF KEYS.RightArrow { dx = 1 }
+      IF KEYS.UpArrow    { dy = -1 }
+      IF KEYS.DownArrow  { dy = 1 }
+      IF dy<>0 { dx = 0 }
+      IF dx<>0 OR dy<>0 { waitup = 5 } ELSE { waitup = 0 }
+
+      # Check what we're about to hit.
+      aheadSprite = bgSprites[manY+dy][manX+dx]
+      ahead = aheadSprite.Picture
+
+      # Is it a diamond?
+      IF ahead == diamondPNG {
+        thePicture = bgSprites[manY + 2*dy][manX + 2*dx].Picture
+        IF thePicture == floorPNG {
+          # Push succeeds.
+          SET bgSprites[manY + 2*dy][manX + 2*dx].Picture = rockPNG
+          numDiamonds = numDiamonds + 1
+          SET aheadSprite.Picture = earthPNG
+        } ELSE {
+          IF thePicture == earthPNG {
+            # Push succeeds.
+            SET bgSprites[manY + 2*dy][manX + 2*dx].Picture = diamondPNG
+            SET aheadSprite.Picture = earthPNG
+          } ELSE {
+            # Push fails.
+            dx = 0
+            dy = 0
+          }
+        }
+      }
+
+      # Is it a rock?
+      IF ahead == rockPNG {
+        # Check what we're pushing it into.
+        thePicture = bgSprites[manY + 2*dy][manX + 2*dx].Picture
+        IF thePicture == floorPNG {
+          # Push succeeds.
+          SET bgSprites[manY + 2*dy][manX + 2*dx].Picture = rockPNG
+          SET aheadSprite.Picture = floorPNG
+        } ELSE {
+          IF thePicture == earthPNG {
+            numDiamonds = numDiamonds - 1
+            # Push succeeds.
+            SET bgSprites[manY + 2*dy][manX + 2*dx].Picture = diamondPNG
+            SET aheadSprite.Picture = floorPNG
+            bgCount = 30
+          } ELSE {
+            # Push fails.
+            dx = 0
+            dy = 0
+          }
+        }
+      }
+
+      # Is it a wall?
+      IF ahead == wallPNG {
+        dx = 0
+        dy = 0
+      }
+
+      # Does the man move?
+      IF dx <> 0 OR dy <> 0 {
+        manX = manX + dx
+        manY = manY + dy
+        manCount = 1.0
+      }
+    }
+
+    # Move the man.
+    IF manCount > 0.0 {
+      manCount = manCount - 0.25
+      IF manCount == 0.0 {
+        # Stop moving.
+        dx = 0
+        dy = 0
+      }
+    }
+
+    # Fade the background.
+    IF bgCount > 0 {
+      bgCount = bgCount - 1
+    }
+  }
+
+  CLS
+  bgSprites = [] # Helps the garbage collector.
+  
+  IF numDiamonds == 0 {
+    Rocks_celebrate(diamondPNG)
+    RETURN TRUE
+  } ELSE {
+    Rocks_celebrate(rockPNG)
+    RETURN FALSE
+  }
+}

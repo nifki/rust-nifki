@@ -1,0 +1,5 @@
+name: Text
+width: 640
+height: 480
+msPerFrame: 100
+debug: false

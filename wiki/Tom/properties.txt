@@ -1,0 +1,5 @@
+name: I'm just playing.
+width: 256
+height: 256
+msPerFrame: 40
+debug: true

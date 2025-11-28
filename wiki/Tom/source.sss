@@ -1,0 +1,156 @@
+DEF DumpLn(x) { DUMP x DUMP "\A/" }
+
+RESIZE WINDOW TO (10, 10)
+DumpLn(WINDOW)
+
+DEF OnLeft(self) {
+  DUMP "L"
+  IF self.sprite.X - self.xstep >= WINDOW.X { RETURN [-self.xstep, 0] }
+  ELSE { RETURN [0, 0] }
+}
+
+DEF OnRight(self) {
+  DUMP "R"
+  IF self.sprite.X + self.sprite.W + self.xstep <= WINDOW.X + WINDOW.W {
+    RETURN [self.xstep, 0]
+  } ELSE { RETURN [0, 0] }
+}
+
+DEF OnUp(self) {
+  DUMP "U"
+  IF self.sprite.Y - self.ystep >= WINDOW.Y {
+    RETURN [0, -self.ystep]
+  } ELSE { RETURN [0, 0] }
+}
+
+DEF OnDown(self) {
+  DUMP "D"
+  IF self.sprite.Y + self.sprite.H + self.ystep <= WINDOW.Y + WINDOW.H {
+    RETURN [0, self.ystep]
+  } ELSE { RETURN [0, 0] }
+}
+
+## Alternative attempt
+DEF OnArrowKey(key, sprite) {
+  moves = [
+    LeftArrow  = [-1,  0],
+    RightArrow = [ 1,  0],
+    DownArrow  = [ 0, -1],
+    UpArrow    = [ 0,  1]
+  ]
+  # Apply the move, if it takes us off the Window, return an "undo it" move.
+  move = moves[key]
+  MOVE sprite BY (move[0], move[1])
+  IF NOT Contains(WINDOW, sprite) {
+    SET WINDOW.R = 1; SET WINDOW.G = 1; SET WINDOW.B = 0
+    RETURN [-move[0], -move[1]]
+  }
+  # We've already moved it and it worked.
+  RETURN [0, 0]
+}
+
+DEF OnArrowKeyForLeft(self) { RETURN OnArrowKey("LeftArrow", self.sprite) }
+
+DEF ballOnDown(self) {
+  d = OnDown(self)
+  IF d[1]==0 { DUMP "Boing!\A/" }
+  RETURN d
+}
+
+genericHandlers = [
+  LeftArrow  = OnArrowKeyForLeft, ##OnLeft,
+  RightArrow = OnRight,
+  DownArrow  = OnDown,
+  UpArrow    = OnUp
+]
+
+MOVE SPRITE(IMG5825) SIZE(WINDOW.W, ) TO (0, 0)
+
+ballSprite = SPRITE(ball) SIZE (1, 1)
+MOVE ballSprite TO (0, 0)
+
+logoHandlers = genericHandlers
+ballHandlers = genericHandlers + [DownArrow = ballOnDown]
+
+logoSprite = SPRITE(smalllogo) SIZE (1, 1)
+MOVE logoSprite TO (3, 3)
+
+GLOBAL Objects = [
+  ball = [sprite=ballSprite, handlers=ballHandlers, xstep=0.5, ystep=0.5,
+          dx=0, dy=0
+  ],
+  logo = [sprite=logoSprite, handlers=logoHandlers, xstep=0.5, ystep=0.5,
+          dx=0, dy=0
+  ]
+]
+
+## Returns TRUE if a and b overlap
+DEF Collide(a, b) {
+  IF a.X < b.X {
+    IF a.X + a.W < b.X { RETURN FALSE }
+  } ELSE {
+    IF b.X + b.W < a.X { RETURN FALSE }
+  }
+
+  IF a.Y < b.Y {
+    IF a.Y + a.H < b.Y { RETURN FALSE }
+  } ELSE {
+    IF b.Y + b.H < a.Y { RETURN FALSE }
+  }
+
+  RETURN TRUE
+}
+
+## Returns TRUE if a contains b (no part of b does not overlap a)
+DEF Contains(a, b) {
+  bL = b.X
+  bR = b.X + b.W
+  aL = a.X
+  aR = a.X + a.W
+
+  bT = b.Y
+  bB = b.Y + b.H
+  aT = a.Y
+  aB = a.Y + a.H
+
+  RETURN (
+    bL >= aL AND bR <= aR AND
+    bT >= aT AND bB <= aB
+  )
+}
+
+DEF Run() {
+  object = Objects.ball
+  WHILE TRUE {
+    SET WINDOW.R = 0; SET WINDOW.G = 0; SET WINDOW.B = 0
+    move = [0, 0]
+    FOR key=handler IN object.handlers { ##DUMP "key=" DUMP key DUMP "\A/"
+      IF KEYS[key]{
+        keymove = handler(object)
+        move = [move[0] + keymove[0], move[1] + keymove[1]]
+      }
+    }
+    ##DUMP "After the loop." DUMP move DUMP "\A/"
+    IF move != [0,0] {
+      ##DUMP move DUMP "\A/"
+      MOVE object.sprite BY (move[0], move[1])
+      ret1 = Collide(Objects.ball.sprite, Objects.logo.sprite)
+      ret2 = Collide(Objects.logo.sprite, Objects.ball.sprite)
+      IF ret1 != ret2 {
+        SET WINDOW.R = 1; SET WINDOW.G = 0; SET WINDOW.B = 0
+      } ELIF (ret1) {
+        SET WINDOW.R = 0; SET WINDOW.G = 1; SET WINDOW.B = 0
+      }
+    }
+    ##DUMP "After the if." DUMP "\A/"
+    IF KEYS.LetterL { object=Objects.logo }
+    IF KEYS.LetterB { object=Objects.ball }
+    WAIT
+  }
+  ##DUMP "After the while." DUMP "\A/"
+}
+
+##DUMP "Begin." DUMP "\A/"
+DUMP STR(3)
+Run()
+##DUMP "End." DUMP "\A/"

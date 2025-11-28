@@ -1,0 +1,5 @@
+name: Pilot your ship using Z, X and Shift.
+width: 384
+height: 384
+msPerFrame: 40
+debug: false

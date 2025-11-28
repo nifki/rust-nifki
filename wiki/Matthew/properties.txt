@@ -1,0 +1,5 @@
+name: TestPage9
+width: 320
+height: 256
+msPerFrame: 40
+debug: false

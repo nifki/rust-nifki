@@ -1,0 +1,5 @@
+name: Keys: Rotate: A, D, Move: left, right and down arrows. New level every 25 points - pieces start to fall faster.
+width: 256
+height: 384
+msPerFrame: 40
+debug: false

@@ -1,0 +1,96 @@
+# You must call this subroutine before any other on this page.
+#
+# Makes a list of points equally spaced around a circle of radius 1, and stores
+# it in the global variable 'Trig_circle'. The last point is the same as the
+# first. The points are numbered from '0' to 'n' inclusive, where 'n' is 
+# determined by the value passed to this subroutine, as follows:
+#
+#  log2steps   n   LEN circle
+#      2       4       5
+#      3       8       9
+#      4      16      17
+#      5      32      33
+#    etc...
+#
+# Also initialises the following global variables:
+#
+#   Trig_pi                3.1415...
+#   Trig_numSteps          LEN circle - 1 
+#   Trig_radiansPerStep    2*pi / numSteps
+#   Trig_radiansPerDegree  2*pi / 360
+#
+DEF init(log2steps) {
+  GLOBAL circle = [
+    [1, 0],
+    [0, 1],
+    [-1, 0],
+    [0, -1],
+    [1, 0]
+  ]
+  WHILE (log2steps>2) {
+    log2steps = log2steps - 1
+    newCircle = []
+    FOR i=next IN circle {
+      IF (i>0) {
+        x = (prev[0]+next[0]) / 2
+        y = (prev[1]+next[1]) / 2
+        r = SQRT(x*x + y*y)
+        newCircle[2*i-1] = [x/r, y/r]
+      }
+      newCircle[2*i] = next
+      prev = next
+    }
+    GLOBAL circle = newCircle
+  }
+  GLOBAL pi = 3.1415926535897931
+  GLOBAL numSteps = LEN circle - 1
+  GLOBAL radiansPerStep = 2*pi / numSteps
+  GLOBAL radiansPerDegree = 2*pi / 360
+}
+
+# Returns the cos and sin of the specified angle, which should be in radians.
+# The result is calculated by interpolating between the points in 'circle'.
+# If 'LEN circle' is 'n+1' then the answer will be accurate to about one part
+# in 'n*n'. The more points there are in 'circle', the more accurate the
+# answer will be.
+DEF cossin(angle) {
+  angle = (angle / radiansPerStep) % numSteps
+  index = FLOOR angle
+  v = angle - index
+  u = 1 - v
+  prev = circle[index]
+  next = circle[index+1]
+  RETURN [
+    u*prev[0] + v*next[0],
+    u*prev[1] + v*next[1]
+  ]
+}
+
+# Returns the tan of the specified angle, which should be in radians. This
+# subroutine is implemented in terms of 'cossin()'.
+DEF tan(angle) {
+  cs = cossin(angle)
+  RETURN cs[1] / cs[0]
+}
+
+# Converts an angle from radians to degrees.
+DEF deg(angle) { RETURN angle / radiansPerDegree }
+
+# Converts an angle from degrees to radians.
+DEF rad(angle) { RETURN angle * radiansPerDegree }
+
+# Test code. Draws a circle.
+
+init(6)
+x = (WINDOW.W - 32) / 2
+y = (WINDOW.H - 32) / 2
+r = x MIN y
+SET WINDOW.G = 0.5
+FOR angle= IN 120 {
+  cs = cossin(rad(222*angle))
+  ar = angle * r / 120
+  MOVE SPRITE(AtomRaft_ball2) TO (x+ar*cs[0], y+ar*cs[1])
+  WAIT
+}
+# See ftp://ftp.embedded.com/pub/1992/sincos.pas for some other approaches
+# (implemented in Pascal, which is a bit like Nifki ;-)

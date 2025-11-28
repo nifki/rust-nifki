@@ -1,0 +1,5 @@
+name: Nifki rocks!
+width: 512
+height: 384
+msPerFrame: 30
+debug: false

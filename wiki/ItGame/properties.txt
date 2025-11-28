@@ -1,0 +1,5 @@
+name: It - Use Cursors to move, and Space to repel
+width: 768
+height: 512
+msPerFrame: 20
+debug: false

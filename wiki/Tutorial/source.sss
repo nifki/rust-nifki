@@ -1,0 +1,154 @@
+# This is a concatenation of the examples in the tutorial. Some have been
+# altered slightly so that they all terminate, and some CLS instructions have
+# been added between the examples.
+
+# To see the output from "DUMP", tick the box labelled "show debug output".
+
+# Example 1
+
+DUMP "Hello, world!\A/"
+
+# Example 2
+
+Rocks_playUntilWin(["#####","#A +#","#####"])
+
+MOVE WINDOW TO (0, 0)
+RESIZE WINDOW TO (256, 256)
+
+# Example 3
+
+FOR pos=char IN "Hello, world!" {
+  DUMP "Character " DUMP pos DUMP " is " DUMP char DUMP "\A/"
+}
+
+# Example 4
+
+FOR i= IN 10 { DUMP factorial(i) DUMP "\A/" }
+
+DEF factorial(i) {
+  IF (i==0) { RETURN 1 }
+  RETURN i * factorial(i-1)
+}
+
+# Example 5
+
+a = [6]
+b = a
+b[0] = 7
+DUMP a[0] DUMP "\A/"
+
+# Example 6 (a)
+
+SET WINDOW.R = 1
+WAIT
+
+# Example 6 (b)
+
+a = WINDOW
+SET a.R = 1
+WAIT
+
+# Example 7
+
+FOR i= IN 100 {
+  SET WINDOW.R = i/100
+  WAIT
+}
+
+# Example 8
+
+MOVE SPRITE(Rocks_manPNG) TO (112, 112)
+WAIT
+CLS
+
+# Example 9
+
+FOR x= IN 113 {
+  MOVE SPRITE(Rocks_manPNG) TO (x*2, 112)
+  WAIT
+}
+CLS
+
+# Example 10
+
+man = SPRITE(Rocks_manPNG)
+FOR x= IN 113 {
+  MOVE man TO (x*2, 112)
+  WAIT
+}
+CLS
+
+# Example 11
+
+man = SPRITE(Rocks_manPNG)
+MOVE man TO (WINDOW.X, WINDOW.Y)
+RESIZE man TO (WINDOW.W, WINDOW.H)
+WAIT
+CLS
+
+# Example 12
+
+man = SPRITE(Rocks_manPNG)
+WHILE NOT KEYS.Escape {
+  MOVE man TO (112, 112)
+  WAIT
+  HIDE man
+  WAIT
+}
+CLS
+WAIT WAIT WAIT WAIT # Brief pause to avoid seeing the same keypress twice.
+
+# Example 13
+
+WHILE NOT KEYS.Escape {
+  MOVE SPRITE(Rocks_rockPNG) TO (224*RANDOM, 224*RANDOM)
+  WAIT
+}
+CLS
+WAIT WAIT WAIT WAIT # Brief pause to avoid seeing the same keypress twice.
+
+# Example 14
+
+DUMP KEYS
+
+# Example 15
+
+IF KEYS["UpArrow"] { DUMP "Yes\A/" } ELSE { DUMP "No\A/" }
+
+IF KEYS.UpArrow { DUMP "Yes\A/" } ELSE { DUMP "No\A/" }
+
+# Example 16
+
+man = SPRITE(Rocks_manPNG)
+MOVE man TO (112, 112)
+WHILE NOT KEYS.Escape {
+  IF KEYS.UpArrow { MOVE man BY (, -1) }
+  IF KEYS.DownArrow { MOVE man BY (, 1) }
+  IF KEYS.LeftArrow { MOVE man BY (-1, ) }
+  IF KEYS.RightArrow { MOVE man BY (1, ) }
+  WAIT
+}
+CLS
+WAIT WAIT WAIT WAIT # Brief pause to avoid seeing the same keypress twice.
+
+# Example 17
+
+max = 1000
+primes = []
+FOR n= IN max-2 { primes[n+2] = TRUE }
+FOR n= IN primes { IF primes[n] {
+  DUMP n DUMP " "
+  k = n*n
+  WHILE k<max {
+    primes[k] = FALSE
+    k = k + n
+  }
+}}
+DUMP "\A/"
+
+# Example 18
+
+toSort = ["frog", "goose", "sheep", "pig", "horse", "cow", "duck"]
+table = []
+FOR =animal IN toSort { table[animal] = [] }
+FOR animal= IN table { DUMP animal DUMP "\A/" }

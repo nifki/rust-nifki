@@ -1,0 +1,237 @@
+# Ideas for new objects:
+# * Make the earth eatable by it
+# * Doors with switches which have to be held to keep door open
+# * Coins that it or they have to collect before finish level --
+# * Multiple its
+# * Things that kill its
+
+GLOBAL manPNG = Rocks_manPNG
+GLOBAL itPNG = Rocks_rockPNG
+GLOBAL wallPNG = Rocks_wallPNG
+GLOBAL blankPNG = Rocks_blankPNG
+GLOBAL killPNG = Rocks_leftPNG
+GLOBAL earthPNG = Rocks_earthPNG
+
+GLOBAL diamondPNG = Rocks_diamondPNG
+# ... and also our own floorPNG.
+
+# A maze game.
+
+WHILE TRUE {
+  playUntilWin([
+    "######################",
+    "#                    #",
+    "# I                  #",
+    "#      ###########   #",
+    "#  ####              #",
+    "#  #                 #",
+    "####         #########",
+    "#     #######        #",
+    "#                    #",
+    "#               #    #",
+    "#              #     #",
+    "#XXXXXXXXXXXXXX#:::::#",
+    "################     #",
+    "#                    #",
+    "#    M               #",
+    "######################"
+  ])
+
+  playUntilWin([
+    "######################",
+    "#                 :  #",
+    "#                 :  #",
+    "# I################  #",
+    "#  #  XX          #  #",
+    "#  #              #  #",
+    "#  #        XX    #  #",
+    "#  #  ##########  #  #",
+    "#  #  #        #  #  #",
+    "#  #  #I       #  #  #",
+    "#  #  ####X    #  #  #",
+    "#  #           #  #  #",
+    "#  #           #  #  #",
+    "#  #############  #  #",
+    "#           X     #  #",
+    "#                 #  #",
+    "#   XX            #M #",
+    "######################"
+  ])
+
+  playUntilWin([
+    "######################",
+    "#                   #",
+    "#        # #        #",
+    "#        # #        #",
+    "X XXXXXXXX X######  #",
+    "X I      : :        #",
+    "X        : :        #",
+    "XX#######X X#########",
+    "#        # #        #",
+    "#        # #        #",
+    "#        # #        #",
+    "#        # #        #",
+    "########## ##########",
+    "#          #        #",
+    "#    M     #        #",
+    "######################"
+  ])
+
+  # Add new levels here.  
+  Rocks_celebrate(killPNG)
+}
+
+# Plays the same level repeatedly until the player solves it.
+DEF playUntilWin(map) {
+  WHILE NOT playLevel(map) {}
+}
+
+# Test if position newX, newY is on top of a wall
+DEF DoesCollide(newX, newY, man) {
+  FOR i= IN 2 {
+    FOR j= IN 2 {
+      IF i == 0 { tileX = FLOOR newX } ELSE { tileX = CEIL newX }
+      IF j == 0 { tileY = FLOOR newY } ELSE { tileY = CEIL newY }
+      ahead = bgSprites[tileY][tileX].Picture
+      IF ahead == wallPNG { 
+        RETURN TRUE
+      } ELIF ahead == earthPNG AND man {
+        RETURN TRUE
+      } ELIF ahead == killPNG AND (man OR NOT man) { 
+        GLOBAL dead = TRUE
+        RETURN FALSE
+      }
+    }
+  }
+  RETURN FALSE
+}
+
+# Plays a single level, displays a success or failure screen, and returns TRUE
+# for success and FALSE for failure.
+DEF playLevel(map) {
+  RESIZE WINDOW TO (24, 16)
+
+  # Define the mapping of characters to pictures.
+  pictures = []
+  pictures[" "] = blankPNG
+  pictures["M"] = blankPNG # This marks the start position.
+  pictures[":"] = earthPNG
+#  pictures["+"] = diamondPNG
+  pictures["I"] = blankPNG
+  pictures["#"] = wallPNG
+  pictures["X"] = killPNG
+
+  # Construct sprites for the map, count diamonds, and find the start position.
+  GLOBAL bgSprites = []
+
+  FOR y=row IN map {
+    GLOBAL bgSprites[y] = []
+    FOR x=char IN row {
+      sprite = SPRITE (pictures[char]) SIZE (1, 1)
+      MOVE sprite TO (x, y)
+      GLOBAL bgSprites[y][x] = sprite
+      IF char == "M" {
+        manX = x
+        manY = y
+      } ELIF char == "I" {
+        itX = x
+        itY = y
+      }
+    }
+  }
+
+  # Construct a sprite for the man.
+  man = SPRITE (manPNG) SIZE (1, 1)
+  it = SPRITE (itPNG) SIZE (1, 1)
+
+  # Game loop.
+  bgCount = 0
+  waitSpaceUp = FALSE
+  moveOffset = 1/4
+  repelDir = 1
+  GLOBAL won = FALSE
+  GLOBAL dead = FALSE
+
+  WHILE NOT won AND NOT dead AND NOT KEYS.Escape {
+    # Display a frame.
+    MOVE man TO (manX, manY)
+    MOVE it TO (itX, itY)
+    MOVE WINDOW TO ((man.X + it.X) / 2 +0.5 - WINDOW.W/2, (man.Y + it.Y) / 2 +0.5 - WINDOW.H/2)
+    SET WINDOW.B = (bgCount / 20) + 0.3
+    WAIT
+
+    # Read the keyboard
+    dx = 0
+    dy = 0
+    IF KEYS.LeftArrow  { dx = -1 }
+    IF KEYS.RightArrow { dx = 1 }
+    IF KEYS.UpArrow    { dy = -1 }
+    IF KEYS.DownArrow  { dy = 1 }
+ #   IF waitSpaceUp {
+ #     IF NOT KEYS.Space  { waitSpaceUp = FALSE }
+ #   } ELSE {
+ #     IF KEYS.Space      { repelDir = -repelDir waitSpaceUp = TRUE }
+ #   }
+    IF KEYS.Space { repelDir = -1 } ELSE { repelDir = 1 } 
+
+    # Check what we're about to hit.
+    IF DoesCollide(manX + dx*moveOffset, manY + dy*moveOffset, TRUE) {
+      xhit = DoesCollide(manX + dx*moveOffset, manY, TRUE)
+      yhit = DoesCollide(manX, manY + dy*moveOffset, TRUE)
+      IF (xhit AND NOT yhit) { dx = 0 }
+      IF (yhit AND NOT xhit) { dy = 0 }
+      IF (xhit AND yhit ) { dx = 0 dy = 0 }
+    }
+
+    # Move the man
+    IF dx <> 0 OR dy <> 0 {
+      manX = manX + dx * moveOffset
+      manY = manY + dy * moveOffset
+    }
+
+    # Now for it
+    itdx = (manX - itX) * repelDir
+    itdy = (manY - itY) * repelDir
+    deltalen = SQRT((itdx*itdx) + (itdy*itdy))
+    itdx = itdx / deltalen
+    itdy = itdy / deltalen   
+
+    # Check what it's about to hit.
+    IF DoesCollide(itX + itdx*moveOffset, itY + itdy*moveOffset, FALSE) {
+      xhit = DoesCollide(itX + itdx*moveOffset, itY, FALSE)
+      yhit = DoesCollide(itX, itY + itdy*moveOffset, FALSE)
+      IF (xhit AND NOT yhit) { itdx = 0 }
+      IF (yhit AND NOT xhit) { itdy = 0 }
+      IF (xhit AND yhit ) { itdx = 0 itdy = 0 }
+    }
+
+    # Move the it
+    IF itdx <> 0 OR itdy <> 0 {
+      itX = itX + itdx * moveOffset
+      itY = itY + itdy * moveOffset
+    }
+   
+    # Test for it meeting man, won!
+    offx = (manX - itX)
+    offy = (manY - itY)
+    deltalen = SQRT((offx*offx) + (offy*offy))  
+    IF deltalen < moveOffset * 3 { GLOBAL won = TRUE }
+
+    # Fade the background.
+    IF bgCount > 0 {
+      bgCount = bgCount - 1
+    }
+  }
+
+  CLS
+  GLOBAL bgSprites = [] # Helps the garbage collector.
+
+  WHILE KEYS.Space { WAIT }  
+  IF won {
+    Rocks_celebrate(itPNG)
+    RETURN TRUE
+  } ELSE {
+    Rocks_celebrate(killPNG)
+    RETURN FALSE
+  }
+}

@@ -1,0 +1,5 @@
+name: Room-based shoot-em-up. Keys: Z, X, /, Return for movement, 2, 3, 4, Space for weapons.
+width: 640
+height: 480
+msPerFrame: 40
+debug: false

@@ -1,0 +1,14 @@
+DEF foo() { DUMP "foo" }
+DEF bar(x=) { DUMP x }
+
+DUMP foo()
+bar(x="pig")
+
+FOR i= IN 100 {
+  MOVE SPRITE(Rocks_manPNG) TO (,i)
+  MOVE SPRITE(Rocks_manPNG) TO (i,)
+  WAIT
+}
+
+FOR x= IN [1] { BREAK } ELSE { DUMP "goose" }
+FOR =x IN [] { } ELSE { DUMP "sheep" }

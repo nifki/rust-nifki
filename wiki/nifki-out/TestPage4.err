@@ -1,0 +1,8 @@
+1 errors found on page TestPage4:
+Line 5:
+Error =
+       ^
+Expected: "-" or "ABS" or "ARGS" or "CEIL" or "FALSE" or "FLOOR" or "GET" or "KEYS" or "LEN" or "LOWER" or "MOUSE" or "NOT" or "RANDOM" or "ROUND" or "SPRITE" or "SQRT" or "STR" or "TEXT" or "TIME" or "TRIM" or "TRUE" or "UPPER" or "VAL" or "WINDOW" or CONSTANT or IDENTIFIER or NUMBER or ROUND or SQUARE or STRING, but not end of sentence.
+
+
+

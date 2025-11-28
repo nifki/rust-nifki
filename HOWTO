@@ -1,2 +1,2 @@
-java -jar $HOME/python/nifki/compiler.jar $HOME/python/nifki/wiki/ Rocks
-java -cp $HOME/python/nifki/wiki/nifki-out/Rocks.jar:$HOME/pathon/nifki/nifki-lib.jar org.sc3d.apt.crazon.vm.Main 512 512 30
+java -jar compiler.jar wiki/ Rocks
+java -cp wiki/nifki-out/Rocks.jar:nifki-lib.jar org.sc3d.apt.crazon.vm.Main 512 512 30

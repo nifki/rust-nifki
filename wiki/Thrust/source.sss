@@ -1,0 +1,253 @@
+# An imitation of Thrust
+# by Alistair Turnbull.
+
+# The keys are Z, X and Shift.
+
+initialise()
+
+GLOBAL map = [
+  "           ##    ",
+  "                 ",
+  " ###         ### ",
+  " ####        ### ",
+  "######       ####",
+  "#########    ####",
+  "    #####    ####",
+  "    #####    ##  ",
+  "                 ",
+  "##               ",
+  "##    P    P   ##",
+  "#################"
+]
+
+WHILE TRUE {
+  playLevel()
+  FOR x= IN 30 {
+    SET WINDOW.R = 1 - (x / 30)
+    SET WINDOW.G = RANDOM / 10
+    SET WINDOW.B = RANDOM / 10
+    WAIT
+  }
+}
+
+###############################################################################
+### Initialisation ###
+
+# Sets up global variables.
+DEF initialise() {
+  Trig_init(5)
+  GLOBAL ships = makeShips()
+  GLOBAL mapPictures = makeMapPictures()
+  GLOBAL picturePaths = makePicturePaths()
+  GLOBAL orbPNG = Rocks_rockPNG
+}
+
+# Returns a list of the 32 ship pictures. Item '0' is a picture of a ship
+# pointing upwards, and subsequent pictures are the same picture rotated
+# clockwise is steps of 11.25 degrees (1/32 of a circle).
+DEF makeShips() {
+  RETURN [
+    ship00, ship01, ship02, ship03, ship04, ship05, ship06, ship07,
+    ship08, ship09, ship10, ship11, ship12, ship13, ship14, ship15,
+    ship16, ship17, ship18, ship19, ship20, ship21, ship22, ship23,
+    ship24, ship25, ship26, ship27, ship28, ship29, ship30, ship31
+  ]
+}
+
+# Returns a map from one-character strings to pictures.
+DEF makeMapPictures() {
+  ans = []
+  ans[" "] = blank
+  ans["#"] = wall
+  ans["P"] = pod
+  RETURN ans
+}
+
+# Returns a map from pictures to lists of paths, such that the shape of a
+# picture (for the purposes of collision detection) is the union of the
+# interiors of its list of paths. Each path is of the format expected by the
+# 'pathHitsCircle()' function.
+DEF makePicturePaths() {
+  ans = []
+  ans[blank] = [
+  ]
+  ans[wall] = [
+    [[0, 0], [64, 0], [64, 64], [0, 64]]
+  ]
+  ans[pod] = [
+    [[25, 64], [18, 45], [46, 45], [39, 64]]
+  ]
+  RETURN ans
+}
+
+###############################################################################
+### Game logic ###
+
+# Plays the game. Call 'initialise()' and set the global variable 'map' before
+# calling this subroutine.
+DEF playLevel() {
+  CLS
+  makeBackSprites()
+  GLOBAL shipX = 0 GLOBAL shipY = 0
+  GLOBAL shipDX = 0 GLOBAL shipDY = 0
+  GLOBAL shipA = 0
+  GLOBAL shipSp = SPRITE(ships[0])
+  GLOBAL orbDX = 50
+  GLOBAL orbDY = 0
+  GLOBAL orbSp = SPRITE(orbPNG)
+  alive = TRUE
+  WHILE (alive) {
+    readKeys()
+    GLOBAL shipDY = shipDY + 0.1 # Gravity.
+    GLOBAL shipX = shipX + shipDX
+    GLOBAL shipY = shipY + shipDY
+    IF backHitsShip() { alive = FALSE }
+    drawFrame()
+  }
+}
+
+# Reads 'KEYS' and modifies 'shipA', 'shipDX' and 'shipDY' accordingly.
+DEF readKeys() {
+  IF KEYS.LetterZ { GLOBAL shipA = shipA - 1 }
+  IF KEYS.LetterX { GLOBAL shipA = shipA + 1 }
+  cs = Trig_circle[shipA % 32]
+  IF KEYS.Shift {
+    GLOBAL shipDX = shipDX + 0.5 * cs[1]
+    GLOBAL shipDY = shipDY - 0.5 * cs[0]
+  }
+}
+
+###############################################################################
+### Graphics ###
+
+# Sets the global variable 'backSprites' to a grid of sprites large enough to
+# cover the window. These sprites are moved around as necessary to give the
+# illusion of an infinite map.
+DEF makeBackSprites() {
+  GLOBAL backSprites = []
+  FOR y= IN CEIL (WINDOW.H/64) + 1 {
+    GLOBAL backSprites[y] = []
+    FOR x= IN CEIL (WINDOW.W/64) + 1 {
+      GLOBAL backSprites[y][x] = SPRITE (wall)
+    }
+  }
+}
+
+DEF drawFrame() {
+  SET shipSp.Picture = ships[shipA % 32]
+  MOVE shipSp TO (shipX - 16, shipY - 16)
+  MOVE orbSp TO (shipX - 16 + orbDX, shipY - 16 + orbDY)
+  MOVE WINDOW TO (
+    ROUND(shipX + 5*shipDX - WINDOW.W/2),
+    ROUND(shipY + 5*shipDY - WINDOW.H/2)
+  )
+  updateBackSprites(
+    FLOOR (WINDOW.X / 64), FLOOR(WINDOW.Y / 64),
+    CEIL ((WINDOW.X+WINDOW.W) / 64), CEIL ((WINDOW.Y+WINDOW.H) / 64)
+  )
+  sky = 0 MAX shipY/64/LEN map MIN 1
+  SET WINDOW.R = 0.7*sky
+  SET WINDOW.G = 0.1 + sky*(1-sky)
+  SET WINDOW.B = 0.5 - 0.4*sky
+  IF backHitsShip() { SET WINDOW.G = 1 } # Debug.
+  WAIT
+}
+
+# Ensures that sprites in 'backSprites' have the correct positions and pictures
+# to show the specified rectangle of 'map'.
+DEF updateBackSprites(xl, yt, xr, yb) {
+  FOR yo= IN yb-yt {
+    y = yt + yo
+    backRow = backSprites[y % LEN backSprites]
+    mapRow = map[0 MAX y MIN (LEN map - 1)]
+    FOR xo= IN xr-xl {
+      x = xl + xo
+      backSp = backRow[x % LEN backRow]
+      SET backSp.Picture = mapPictures[mapRow[x % LEN mapRow]]
+      MOVE backSp TO (x*64, y*64)
+    }
+  }
+}
+
+###############################################################################
+### Collision detection ###
+
+# Tests whether a ship overlaps the background. This function just makes
+# several calls to 'backHitsCircle()' passing circles that approximate the
+# shape of the ship.
+DEF backHitsShip() {
+  cs = Trig_circle[shipA % 32]
+  # RETURN backHitsCircle(shipX, shipY, 16) is faster and nearly as good.
+  RETURN (
+    backHitsCircle(shipX, shipY, 10) OR
+    backHitsCircle(shipX+13*cs[1], shipY-13*cs[0], 3) OR
+    backHitsCircle(shipX-7.5*cs[1]-8.5*cs[0], shipY+7.5*cs[0]-8.5*cs[1], 4.5) OR
+    backHitsCircle(shipX-7.5*cs[1]+8.5*cs[0], shipY+7.5*cs[0]+8.5*cs[1], 4.5)
+  )
+}
+
+# Tests whether the specified circle overlaps the background. This function
+# compares the circle to the outlines of each of the map pictures it overlaps,
+# using 'pathHitsCircle()'.
+DEF backHitsCircle(x, y, r) {
+  xl = FLOOR((x-r) / 64) xr = CEIL((x+r) / 64)
+  yt = FLOOR((y-r) / 64) yb = CEIL((y+r) / 64)
+  FOR yo= IN yb-yt {
+    mapY = yt + yo
+    mapRow = map[0 MAX mapY MIN (LEN map - 1)]
+    FOR xo= IN xr-xl {
+      mapX = xl + xo
+      mapCell = mapRow[mapX % LEN mapRow]
+      FOR =path IN picturePaths[mapPictures[mapCell]] {
+        IF pathHitsCircle(path, x - 64*mapX, y - 64*mapY, r) { RETURN TRUE }
+      }
+    }
+  }
+  RETURN FALSE
+}
+
+# Tests whether the circle with centre 'x', 'y' and radius 'r' intersects the
+# interior of the specified closed path. The path is specified as a list of
+# pairs of coordinates, each representing one corner. For example, the following
+# defines a square of side 10: [[0, 0], [10, 0], [10, 10], [0, 10]]. The path
+# need not be convex, and may self-intersect. An even-odd winding rule is used
+# to define its interior.
+DEF pathHitsCircle(path, x, y, r) {
+  isInside = FALSE
+  prev = path[LEN path - 1]
+  FOR =next IN path {
+    # Work out the vector from 'prev' to the circle.
+    dx = x - prev[0]
+    dy = y - prev[1]
+    # Check if 'prev' is inside the circle.
+    IF dx*dx + dy*dy < r*r { RETURN TRUE }
+    # Work out the unit vector along the edge from 'prev' to 'next'.
+    px = next[0] - prev[0]
+    py = next[1] - prev[1]
+    len = SQRT(px*px + py*py)
+    px = px / len
+    py = py / len
+    # Check if the circle intersects the edge from 'prev' to 'next'.
+    u = dx*px + dy*py
+    v = dx*py - dy*px
+    IF u>0 AND u<len AND ABS(v)<r { RETURN TRUE }
+    # Update the even-odd test.
+    IF y>prev[1] XOR y>next[1] {
+      isInside = isInside XOR v<0 XOR prev[1]>next[1]
+    }
+    prev = next
+  }
+  RETURN isInside
+}
+
+###############################################################################
+### Test code (not normally called) ###
+
+DEF testShips() {
+  ship = SPRITE (ship00)
+  MOVE ship TO (112, 112)
+  WHILE (TRUE) { FOR i= IN 32 {
+    SET ship.Picture = ships[i]
+    WAIT
+  }}
+}

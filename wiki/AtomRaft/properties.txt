@@ -1,0 +1,5 @@
+name: See http://www.minworks.co.uk/atomraft/ for a version written in Java.
+width: 256
+height: 256
+msPerFrame: 20
+debug: false

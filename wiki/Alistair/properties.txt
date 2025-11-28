@@ -1,0 +1,5 @@
+name: I use this page to test fixes to the compiler.
+width: 320
+height: 256
+msPerFrame: 40
+debug: true

@@ -1,0 +1,108 @@
+# A utility for turning text into a list of sprites.
+
+# The current font. This is a table mapping characters to pictures.
+# To change the colour of the text, you have to change the whole font.
+GLOBAL font = defaultFont()
+
+# The current font size. A size of 1.0 means the sprites are shown at their
+# normal size.
+GLOBAL size = 1.0
+
+# Given a string, returns a list of sprites, one for each character. The string
+# must not contain any characters that are not defined in the current font. The
+# top-left corner of the first sprite will be placed at the specified position,
+# which defaults to (0, 0), and subsequent characters will be arrayed out to the
+# right. You can centre the text later using Text_centre().
+DEF print(string, X=0, Y=0) {
+  ans = []
+  FOR pos=char IN string {
+    ans[pos] = SPRITE(font[char])
+    RESIZE ans[pos] BY (size, size)
+    MOVE ans[pos] TO (X, Y)
+    X = X + ans[pos].W
+  }
+  RETURN ans
+}
+
+# Given a list of sprites of the form returned by Text_print(), moves them all
+# horizontally so that the string is centred about the point which was
+# previously its top-left corner. Returns its argument unchanged.
+DEF centre(spriteList) {
+  last = spriteList[LEN(spriteList) - 1]
+  left = spriteList[0].X
+  right = last.X + last.W
+  distance = (left-right) / 2
+  FOR =sprite IN spriteList {
+    MOVE sprite BY (distance, )
+  }
+  RETURN spriteList
+}
+
+# Returns a (not very well drawn) font of the form required for Text_font. All
+# characters in this font are 32x32 pixels. The sprites have transparent
+# backgrounds and the characters are drawn in white with a black outline. They
+# should look okay on any colour of background. The characters defined are the
+# capital letters, the digits, space, and a few punctuation characters.
+#
+# ToDo: Redesign the letters and numbers to be thicker. The white part should be
+# four pixels thick, and the black border should be two pixels thick. This is so
+# that the sprites still look okay at half size.
+# ToDo: Finish off the complete ASCII character set at least.
+# ToDo: Reduce the PNG files to 2bpp (currently they are 32bpp).
+DEF defaultFont() {
+  ans = []
+  ans[" "] = Space
+  ans["!"] = Exclamation
+  ans[","] = Comma
+  ans["."] = FullStop
+  ans["0"] = Number0
+  ans["1"] = Number1
+  ans["2"] = Number2
+  ans["3"] = Number3
+  ans["4"] = Number4
+  ans["5"] = Number5
+  ans["6"] = Number6
+  ans["7"] = Number7
+  ans["8"] = Number8
+  ans["9"] = Number9
+  ans[":"] = Colon
+  ans[";"] = SemiColon
+  ans["?"] = Question
+  ans["A"] = LetterA
+  ans["B"] = LetterB
+  ans["C"] = LetterC
+  ans["D"] = LetterD
+  ans["E"] = LetterE
+  ans["F"] = LetterF
+  ans["G"] = LetterG
+  ans["H"] = LetterH
+  ans["I"] = LetterI
+  ans["J"] = LetterJ
+  ans["K"] = LetterK
+  ans["L"] = LetterL
+  ans["M"] = LetterM
+  ans["N"] = LetterN
+  ans["O"] = LetterO
+  ans["P"] = LetterP
+  ans["Q"] = LetterQ
+  ans["R"] = LetterR
+  ans["S"] = LetterS
+  ans["T"] = LetterT
+  ans["U"] = LetterU
+  ans["V"] = LetterV
+  ans["W"] = LetterW
+  ans["X"] = LetterX
+  ans["Y"] = LetterY
+  ans["Z"] = LetterZ
+  RETURN ans
+}
+
+# Test code.
+
+SET WINDOW.G = 0.5
+GLOBAL size = 2.0
+td = centre(print("ALISTAIR", X=320, Y=128))
+GLOBAL size = 1.0
+hw = centre(print("SMELLS OF ROSES", X=320, Y=320))
+dn = centre(print("I DO NOT!", X=320, Y=352))
+WAIT

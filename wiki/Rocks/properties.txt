@@ -1,0 +1,5 @@
+name: Use the arrow keys to collect the diamonds, but be careful of the rocks!
+width: 384
+height: 384
+msPerFrame: 30
+debug: false

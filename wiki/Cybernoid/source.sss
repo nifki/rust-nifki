@@ -1,0 +1,1492 @@
+# "Shift" is a really bad choice for any control key you're likely
+# to want to hold down. Holding it for a few seconds turns on "sticky keys"
+# on Windows. - DF
+
+# True, but Space seems to conflict with Z and X! I'll change it to Slash.
+# - Alistair
+
+RESIZE WINDOW TO (640, 480)
+Trig_init(6)
+
+GLOBAL CharToPicture = []
+GLOBAL CharToPicture[" "] = Space
+GLOBAL CharToPicture["."] = SolidSpace
+GLOBAL CharToPicture[","] = PorousSpace
+GLOBAL CharToPicture["#"] = Wall
+GLOBAL CharToPicture["+"] = Grid
+GLOBAL CharToPicture[":"] = Exit
+GLOBAL CharToPicture[";"] = Spawn
+GLOBAL CharToPicture["X"] = Crate
+
+GLOBAL AllPictures = []
+FOR =pic IN CharToPicture { GLOBAL AllPictures[pic] = FALSE }
+GLOBAL SolidPictures = AllPictures
+FOR =x IN "#X.,+" { GLOBAL SolidPictures[CharToPicture[x]] = TRUE }
+GLOBAL NonPorousPictures = AllPictures
+FOR =x IN "#X." { GLOBAL NonPorousPictures[CharToPicture[x]] = TRUE }
+GLOBAL WeakPictures = AllPictures
+FOR =x IN "X" { GLOBAL WeakPictures[CharToPicture[x]] = TRUE }
+GLOBAL ExitPictures = AllPictures
+FOR =x IN ":" { GLOBAL ExitPictures[CharToPicture[x]] = TRUE }
+GLOBAL SpawnPictures = AllPictures
+FOR =x IN ":;" { GLOBAL SpawnPictures[CharToPicture[x]] = TRUE }
+
+# Random baddies spew forth from all exits. This list defines the pictures they
+# can use. The picture chosen makes no difference to the behaviour.
+GLOBAL BaddiePictures = [Bad1, Bad2]
+
+# These are the animation frames of an explosion. Explosions are important to a
+# game like this!
+GLOBAL ExplosionPictures = [
+  Explosion1, Explosion2, Explosion3, Explosion4,
+  Explosion5, Explosion6, Explosion7, Explosion8
+]
+
+# These pictures are decimal digits, used to show the score.
+GLOBAL DigitPictures = [
+  Digit0, Digit1, Digit2, Digit3, Digit4,
+  Digit5, Digit6, Digit7, Digit8, Digit9
+]
+
+GLOBAL Rooms = []
+
+GLOBAL Rooms.Start = [
+  "####################",
+  "#                  :",
+  "#                  :",
+  "#                  #",
+  "#    ###    ###    #",
+  "#    #::::::::#    #",
+  "#    #::::::::#    #",
+  "#    #++++++++#    #",
+  "#    XXXXXXXXXX    #",
+  "#    XXX    XXX    #",
+  "#    XXX    XXX    #",
+  "#    XXXXXXXXXX    #",
+  ":    XXXXXXXXXX    #",
+  ":    XXXXXXXXXX    #",
+  "####################",
+  ExitLeft = "StartBonus",
+  ExitRight = "StartBonus",
+  ExitMid = "Entrance",
+  Spawn=[
+    [MakeCyclotron, x=1, y=1, speed=8, isBig=TRUE]
+  ]
+]
+
+GLOBAL Rooms.StartBonus = [
+  "####################",
+  ":  ;X;X;X;X;X;X;X; #",
+  ":  X;X;X;X;X;X;X;X;#",
+  "#;X;X;X;X;X;X;X;X; #",
+  "# ;X;X;X;X;X;X;X;X;#",
+  "#;X;X;X;X;X;X;X;X; #",
+  "#  X;X;++++++X;X;  #",
+  "#  ;X;X+    +;X;X  #",
+  "#  X;X;++++++X;X;  #",
+  "#;X;X;X;X;X;X;X;X; #",
+  "# ;X;X;X;X;X;X;X;X;#",
+  "#;X;X;X;X;X;X;X;X; #",
+  "# ;X;X;X;X;X;X;X;  :",
+  "#;X;X;X;X;X;X;X;X  :",
+  "####################",
+  ExitLeft = "Start",
+  ExitRight = "Start",
+  ExitUp = "Start",
+  ExitMid = "StartBonus",
+  Spawn=[]
+]
+
+GLOBAL Rooms.Entrance = [
+  "##############:::###",
+  "#XX              XX#",
+  "#X                X#",
+  "#    ###XXXX###    #",
+  "#    #X      X#    #",
+  ":    #        #    :",
+  ":    X  ++++  X    :",
+  ":    X  +;;+  X    :",
+  ":    X  ++++  X    :",
+  ":    #  X  X  #    :",
+  "#    #X X  X X#    #",
+  "#    ###X  X###    #",
+  "#X      X  X      X#",
+  "#XX     X  X     XX#",
+  "####################",
+  ExitLeft = "Entrance",
+  ExitRight = "Entrance",
+  ExitUp = "BigRoomWithSpawns",
+  Spawn=[]
+]
+
+GLOBAL Rooms.BigRoomWithSpawns = [
+  "##############:::###",
+  ":               ;+;:",
+  ":              ;+; :",
+  ":             ;+;  :",
+  ":            ;+;   :",
+  ":          ;;+;    :",
+  ":        ;;++;     :",
+  ":      ;;++;;      :",
+  ":     ;++;;        :",
+  ":    ;+;;          :",
+  ":   ;+;            :",
+  ":  ;+;             :",
+  ": ;+;              :",
+  ":;+;               :",
+  "##############   ###",
+  ExitLeft = "BigRoomWithSpawns",
+  ExitRight = "BigRoomWithSpawns",
+  ExitUp = "SkirtThis",
+  ExitDown = "Entrance",
+  Spawn=[]
+]
+
+GLOBAL Rooms.SkirtThis = [
+  "####################",
+  ":;;;           X;;:#",
+  ":;;;           X;;;#",
+  "#XXXXXXXXXX    X;;;#",
+  "#;;;;;;;;;;X    XXX#",
+  "#XXXXXXXXXX;X      #",
+  "#          X;X     #",
+  "#           X;X    #",
+  "#           X;X    #",
+  "#            X;X   #",
+  "#####        X;X   #",
+  ":   #       X;X    #",
+  ":   #       X;X;;;X#",
+  ":   #      X;X;;;X #",
+  "##############:::###",
+  ExitLeft = "Blockage",
+  ExitDown = "BigRoomWithSpawns",
+  ExitMid = "Maze",
+  Spawn=[
+    [MakeTurret, x=1, y=8, isRight=TRUE, fireRate=0.1],
+    [MakeTurret, x=5, y=12, isRight=TRUE, fireRate=0.1]
+  ]
+]
+
+GLOBAL Rooms.Maze = [
+  "##::##::####::######",
+  "#        #;;       #",
+  "#        #;        #",
+  "#;;;##;;;#   ;##:  #",
+  "##########  ########",
+  ":;;;;      ;;;+    :",
+  ":;;;;++####;;;+    :",
+  "#####++;;;#####::###",
+  ":         +        :",
+  ":   #;;;  +  ;;#   :",
+  "#####;;;  #  ;;##++#",
+  ":  :####  #  ###   :",
+  ":   #;;   #  ;;#   :",
+  "#   #;    #   ;#   #",
+  "##::##::####::######",
+  ExitLeft = "Maze",
+  ExitRight = "Maze",
+  ExitUp = "Maze",
+  ExitDown = "Maze",
+  ExitMid = "SkirtThis",
+  Spawn=[]
+]
+
+GLOBAL Rooms.Blockage = [
+  "####################",
+  "#                  :",
+  "#                  :",
+  "#                  #",
+  "#                  #",
+  "#     XXXXXXXX     #",
+  "#    X        X    #",
+  "#    X ;;;;;; X    #",
+  "#    X ;;;;;; X    #",
+  "#    X ;;;;;; X    #",
+  "#######++++++#######",
+  ":  XXXXXXXXXXXXXX  :",
+  ":  XXXXXXXXXXXXXX  :",
+  ":  XXXXXXXXXXXXXX  :",
+  "####################",
+  ExitLeft = "ZigZag",
+  ExitRight = "SkirtThis",
+  ExitMid = "Blockage",
+  Spawn=[
+    [MakeTurret, x=1, y=8, isRight = TRUE, fireRate = 0.1],
+    [MakeTurret, x=17, y=8, isRight = FALSE, fireRate = 0.1]
+  ]
+]
+
+GLOBAL Rooms.ZigZag = [
+  "####################",
+  "#  ;;;;;;;;;;;;;;  #",
+  "#  XXXXX    XXXXX  #",
+  "#  ;;;;;    ;;;;;  #",
+  "#  ;############;  #",
+  "#  ;############;  #",
+  "#  ;;;;;;++;;;;;;  #",
+  "#  XXXXXX++XXXXXX  #",
+  "#  ;;;;;;++;;;;;;  #",
+  "#++###   ##   ###++#",
+  "#++###   ##   ###++#",
+  ":  ;;;;;;++;;;;;;  :",
+  ":  XXXX  ++  XXXX  :",
+  ":  ;;;;  ++  ;;;;  :",
+  "####################",
+  ExitLeft = "Warehouse",
+  ExitRight = "Blockage",
+  ExitMid = "ZigZag",
+  Spawn=[
+    [MakeTurret, x=10, y=2, isRight = TRUE, fireRate = 0.1],
+    [MakeTurret, x=8, y=2, isRight = FALSE, fireRate = 0.1],
+    [MakeTurret, x=1, y=7, isRight = TRUE, fireRate = 0.1],
+    [MakeTurret, x=17, y=7, isRight = FALSE, fireRate = 0.1],
+    [MakeTurret, x=11, y=12, isRight = TRUE, fireRate = 0.1],
+    [MakeTurret, x=7, y=12, isRight = FALSE, fireRate = 0.1]
+  ]
+]
+
+GLOBAL Rooms.Warehouse = [
+  "####################",
+  ":                  #",
+  ": XXX;;XX;;XX;;XXX #",
+  ": XXX;;XX;;XX;;XXX #",
+  "# XXX  ;;  ;;  XXX #",
+  "# ;;;  XX;;XX  ;;; #",
+  "# XXX;;XX;;XX;;XXX #",
+  "# XXX  ;;  ;;  XXX #",
+  "# XXX;;XX;;XX;;XXX #",
+  "# ;;;  XX;;XX  ;;; #",
+  "# XXX  ;;  ;;  XXX #",
+  "# XXX;;XX;;XX;;XXX :",
+  "# XXX;;XX;;XX;;XXX :",
+  "#                  :",
+  "####################",
+  ExitLeft = "Cyclotrons",
+  ExitRight = "ZigZag",
+  Spawn = [
+    [MakeCyclotron, x=6, y=7, speed = 4, isBig=FALSE],
+    [MakeCyclotron, x=13, y=7, speed = 4, isBig=FALSE]
+  ]
+]
+
+GLOBAL Rooms.Cyclotrons = [
+  "#########  #########",
+  "#       X  X       :",
+  "#       X  X       :",
+  "#       X  X       :",
+  "#   #####++#####   #",
+  "#   X   #::#   X   #",
+  "#   X   #  #   X   #",
+  "#   X   #  #   X   #",
+  "#   #   #  #   #   #",
+  ":   #   X  X   #    ",
+  ":   #   X  X   #    ",
+  "#   #   #  #   #   #",
+  "#       #  #       #",
+  "#       #  #       #",
+  "#########::#########",
+  ExitLeft = "Cyclotrons",
+  ExitRight = "Warehouse",
+  ExitDown = "Cyclotrons",
+  ExitMid = "Fireball",
+  Spawn=[
+    [MakeCyclotron, x=1, y=1, speed = 8, isBig=FALSE],
+    [MakeCyclotron, x=1, y=13, speed = 8, isBig=FALSE],
+    [MakeCyclotron, x=18, y=13, speed = 8, isBig=FALSE],
+    [MakeCyclotron, x=9, y=5, speed = 8, isBig=FALSE],
+    [MakeCyclotron, x=10, y=5, speed = 8, isBig=FALSE],
+    [MakeCyclotron, x=9, y=14, speed = 8, isBig=FALSE],
+    [MakeCyclotron, x=10, y=14, speed = 8, isBig=FALSE]
+  ]
+]
+
+GLOBAL Rooms.Fireball = [
+  "#############:::::##",
+  "#          #       #",
+  "#          #       #",
+  "#          #       #",
+  "#          #       #",
+  "#       #  #       #",
+  "#       #  #       #",
+  "#       ####       #",
+  "#       #  #       #",
+  ":       #  #       #",
+  ":                  #",
+  "#                  #",
+  "#                  #",
+  "#                  #",
+  "####################",
+  ExitLeft = "FireballBonus",
+  ExitUp = "Battlements",
+  Spawn = [
+    [MakeFireball, x=9, y=8],
+    [MakeFireball, x=10, y=8],
+    [MakeFireball, x=9, y=9],
+    [MakeFireball, x=10, y=9]
+  ]
+]
+
+GLOBAL Rooms.FireballBonus = [
+  "####################",
+  "#                  #",
+  "# ;    ;           #",
+  "#   ;    ;         #",
+  "#     ;    ;       #",
+  "#       ;    ;     #",
+  "#    ;    ;    ;   #",
+  "#      ;    ;    ; #",
+  "#   ;     ;   ;    #",
+  "#       ;       ;  :",
+  "#  ;  ;    ; ;     :",
+  "#   ;              #",
+  "# ;                #",
+  "#                  #",
+  "####################",
+  ExitRight = "Fireball",
+  Spawn = [
+    [MakeFireball, x=1, y=1],
+    [MakePackage, x=17, y=1, Spawn=[
+      [MakeCyclotron, x=18, y=1, speed=4, isBig=FALSE],
+      [MakeCyclotron, x=18, y=1, speed=4, isBig=FALSE]
+    ]],
+    [MakePackage, x=17, y=12, Spawn=[
+      [MakeBaddieGenerator, x=17, y=12, timer=50]
+    ]]
+  ]
+]
+
+GLOBAL Rooms.Battlements = [
+  "::::::::::::::::::::",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  "##    ##    ##    ##",
+  "##    ##XXXX##    ##",
+  "##    ##    ##    ##",
+  "################  ##",
+  "#############     ##",
+  "#############:::::##",
+  ExitLeft = "BattlementsWest",
+  ExitRight = "BattlementsEast",
+  ExitUp = "Sky",
+  ExitDown = "Fireball",
+  Spawn = [
+    [MakeTurret, x=8, y=8, isRight=FALSE, fireRate=0.1],
+    [MakeTurret, x=10, y=8, isRight=TRUE, fireRate=0.1]
+  ]
+]
+
+GLOBAL Rooms.BattlementsWest = [
+  "::::::::::::::::::::",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  "##    ##    ##    ##",
+  "##    ##XXXX##    ##",
+  "##    ##    ##    ##",
+  "###  ####  ####  ###",
+  "###  XXXX  XXXX  ###",
+  "####################",
+  ExitLeft = "Tower",
+  ExitRight = "Battlements",
+  ExitUp = "SkyWest",
+  Spawn = [
+    [MakeTurret, x=8, y=8, isRight=FALSE, fireRate=0.1],
+    [MakeTurret, x=10, y=8, isRight=TRUE, fireRate=0.1]
+  ]
+]
+
+GLOBAL Rooms.BattlementsEast = [
+  "::::::::::::::::::::",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":       XXXX       :",
+  "##    ##    ##    ##",
+  "##XX  ##    ##  XX##",
+  "## X  ##    ##  X ##",
+  "####################",
+  "####################",
+  "####################",
+  ExitLeft = "Battlements",
+  ExitRight = "Tower",
+  ExitUp = "SkyEast",
+  Spawn = [
+    [MakeTurret, x=2, y=8, isRight=TRUE, fireRate=0.1],
+    [MakeTurret, x=16, y=8, isRight=FALSE, fireRate=0.1],
+    [MakeFireball, x=9, y=10]
+  ]
+]
+
+GLOBAL Rooms.Sky = [
+  "::::::::::::::::::::",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  "::::::::::::::::::::",
+  ExitLeft = "SkyWest",
+  ExitRight = "SkyEast",
+  ExitUp = "Sky",
+  ExitDown = "Battlements",
+  Spawn = [
+    [MakeFireball, x=1, y=1],
+    [MakeFireball, x=19, y=1],
+    [MakeFireball, x=1, y=14],
+    [MakeFireball, x=19, y=14]
+  ]
+]
+
+GLOBAL Rooms.SkyEast = [
+  "::::::::::::::::::::",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  "::::::::::::::::::::",
+  ExitLeft = "Sky",
+  ExitRight = "TowerTop",
+  ExitUp = "SkyEast",
+  ExitDown = "BattlementsEast",
+  Spawn = [
+    [MakeFireball, x=1, y=1],
+    [MakeFireball, x=19, y=1],
+    [MakeFireball, x=1, y=14],
+    [MakeFireball, x=19, y=14]
+  ]
+]
+
+GLOBAL Rooms.SkyWest = [
+  "::::::::::::::::::::",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  ":                  :",
+  "::::::::::::::::::::",
+  ExitLeft = "TowerTop",
+  ExitRight = "Sky",
+  ExitUp = "SkyWest",
+  ExitDown = "BattlementsWest",
+  Spawn = [
+    [MakeFireball, x=1, y=1],
+    [MakeFireball, x=19, y=1],
+    [MakeFireball, x=1, y=14],
+    [MakeFireball, x=19, y=14]
+  ]
+]
+
+GLOBAL Rooms.Tower = [
+  "::::::##::::##::::::",
+  ":     ##    ##     :",
+  ":     XX    XX     :",
+  ":     XX    XX     :",
+  ":     ##    ##     :",
+  ":     ##    ##     :",
+  ":     ##    ##     :",
+  ":     XX    XX     :",
+  ":     XX    XX     :",
+  "##    ##    ##    ##",
+  "##   ###    ###   ##",
+  "##  ####;;;;####  ##",
+  "##++++++;;;;++++++##",
+  "###;;;;;;;;;;;;;;###",
+  "###::::::::::::::###",
+  ExitLeft = "BattlementsEast",
+  ExitRight = "BattlementsWest",
+  ExitUp = "TowerTop",
+  ExitDown = "SortingOffice",
+  Spawn = [
+    [MakeTurret, x=2, y=10, isRight=TRUE, fireRate=0.1],
+    [MakeTurret, x=16, y=10, isRight=FALSE, fireRate=0.1],
+    [MakeCyclotron, x=3, y=13, speed=16, isBig=TRUE]
+  ]
+]
+
+GLOBAL Rooms.TowerTop = [
+  "::::::##::::##::::::",
+  ":     ##    ##     :",
+  ":     XX    XX     :",
+  ":     XX    XX     :",
+  ":     ##    ##     :",
+  ":     ##    ##     :",
+  ":     XX    XX     :",
+  ":     XX    XX     :",
+  ":     XX    XX     :",
+  ":     ##    ##     :",
+  ":     ##    ##     :",
+  ":     XX    XX     :",
+  ":     XX    XX     :",
+  ":     ##    ##     :",
+  "::::::##::::##::::::",
+  ExitLeft = "SkyEast",
+  ExitRight = "SkyWest",
+  ExitUp = "TowerTop",
+  ExitDown = "Tower",
+  Spawn = [
+    [MakeFireball, x=5, y=7],
+    [MakeFireball, x=14, y=7],
+    [MakeCyclotron, x=9, y=7, speed=16, isBig=TRUE]
+  ]
+]
+
+GLOBAL Rooms.SortingOffice = [
+  "###              ###",
+  "# X              X #",
+  "# X              X #",
+  "#+,,            ,,+#",
+  "# ,,++,,    ,,++,, #",
+  "#  +  ,,    ,,  +  #",
+  "#  +   +    +   +  #",
+  "#  ,,  +    +  ,,  #",
+  "#++,,++,,  ,,++,,++#",
+  "#   +  ,,++,,  +   #",
+  "#   +   +::+   +   #",
+  ":   ,,  +  +  ,,   :",
+  ":   ,,++,,,,++,,   :",
+  ":   X   ,,,,   X   :",
+  "####################",
+  ExitLeft = "SortingOffice",
+  ExitRight = "SortingOffice",
+  ExitMid = "End",
+  Spawn = [
+    [MakePackage, x=2, y=3, Spawn=[
+      [MakeFireball, x=2, y=3],
+      [MakeFireball, x=3, y=3],
+      [MakeFireball, x=2, y=4],
+      [MakeFireball, x=3, y=4]
+    ]],
+    [MakePackage, x=16, y=3, Spawn=[
+      [MakeCyclotron, x=16, y=3, speed=4, isBig=FALSE],
+      [MakeCyclotron, x=17, y=3, speed=4, isBig=FALSE],
+      [MakeCyclotron, x=16, y=4, speed=4, isBig=FALSE],
+      [MakeCyclotron, x=17, y=4, speed=4, isBig=FALSE]
+    ]],
+    [MakePackage, x=6, y=4, Spawn=[
+      [MakeCyclotron, x=6, y=4, speed=4, isBig=FALSE],
+      [MakeCyclotron, x=7, y=4, speed=4, isBig=FALSE],
+      [MakeCyclotron, x=6, y=5, speed=4, isBig=FALSE],
+      [MakeCyclotron, x=7, y=5, speed=4, isBig=FALSE]
+    ]],
+    [MakePackage, x=12, y=4, Spawn=[
+      [MakeFireball, x=12, y=4],
+      [MakeFireball, x=13, y=4],
+      [MakeFireball, x=12, y=5],
+      [MakeFireball, x=13, y=5]
+    ]],
+    [MakePackage, x=3, y=7, Spawn=[
+      [MakeBaddieGenerator, x=4, y=7, timer=50]
+    ]],
+    [MakePackage, x=15, y=7, Spawn=[
+      [MakeBaddieGenerator, x=15, y=7, timer=50]
+    ]],
+    [MakePackage, x=7, y=8, Spawn=[
+      [MakeBaddieGenerator, x=8, y=8, timer=50]
+    ]],
+    [MakePackage, x=11, y=8, Spawn=[
+      [MakeBaddieGenerator, x=11, y=8, timer=50]
+    ]],
+    [MakePackage, x=4, y=11, Spawn=[
+      [MakeCyclotron, x=4, y=11, speed=8, isBig=TRUE]
+    ]],
+    [MakePackage, x=14, y=11, Spawn=[
+      [MakeCyclotron, x=14, y=11, speed=8, isBig=TRUE]
+    ]],
+    [MakePackage, x=8, y=12, Spawn=[
+      [MakeTurret, x=8, y=12, isRight=FALSE, fireRate=0.2]
+    ]],
+    [MakePackage, x=10, y=12, Spawn=[
+      [MakeTurret, x=10, y=12, isRight=TRUE, fireRate=0.2]
+    ]]
+  ]
+]
+
+GLOBAL Rooms.End = [
+  "####################",
+  "#                  #",
+  "#                  #",
+  "#                  #",
+  "#                  #",
+  "#  #### #  # ###   #",
+  "#  #    ## # #  #  #",
+  "#  ###  # ## #  #  #",
+  "#  #    #  # #  #  #",
+  "#  #### #  # ###   #",
+  "#                  #",
+  "#                  #",
+  "#                  #",
+  "#                  #",
+  "####################",
+  Spawn = []
+]
+
+# When a baddie is shot (not when it dies by colliding with the walls) it
+# sometimes leaves behind a power up. This table defines the probabilities of
+# each kind of power up, and what happens when you pick it up. The
+# probabilities must add up to less than 1.0. Note that the keys in this table
+# are pictures.
+GLOBAL PowerUps = []
+GLOBAL PowerUps[Medikit] = [probability=0.05, pickup=Heal]
+GLOBAL PowerUps[Mace] = [probability=0.05, pickup=MakeMace]
+GLOBAL PowerUps[Ammo] = [probability=0.03, pickup=GetAmmo]
+
+# The player has an array of exhaustible weapons defined by this table. Each key
+# of this table defines the picture used in the status display to show that the
+# weapon is selected. The corresponding value defines the key on the keyboard
+# that is used to select the weapon (the weapon is fired by pressing Space), and
+# a subroutine that should be called when the weapon is fired.
+GLOBAL Weapons = [
+  [picture=Bounce, fire=FireBounce, key="Number2", count=1],
+  [picture=TimeBomb4, fire=FireTimeBomb, key="Number3", count=5],
+  [picture=Mine, fire=FireMine, key="Number4", count=2]
+]
+GLOBAL TimeBombPictures = [TimeBomb1, TimeBomb2, TimeBomb3, TimeBomb4]
+
+WHILE TRUE { PlayUntilDead() BREAK }
+
+################################################################################
+# Main game logic.
+
+DEF PlayUntilDead() {
+  # Initialise the per-life stuff.
+  CLS
+
+  GLOBAL BackSp = []
+  FOR y= IN 15 {
+    GLOBAL BackSp[y] = []
+    FOR x= IN 20 {
+      sp = SPRITE (Space)
+      GLOBAL BackSp[y][x] = sp
+      MOVE sp TO (x*32, y*32)
+    }
+  }
+
+  # 'Objects' is a list that contains everything except the ship and the
+  # background.
+  #
+  # Each object has a method called 'think' which is passed the object each
+  # frame. The subroutine should move sprites around, and put any objects into
+  # Objects that it wants to exist next frame, including possibly itself. See
+  # BulletThink for an example.
+  #
+  # Each object also has a method called 'hide' which is passed the object each
+  # time the player changes rooms. The subroutine should normally just hide all
+  # its sprites. Many objects only have a single sprite called 'sp'; these can
+  # use HideSp as their 'hide' method. Objects such as weapons that follow the
+  # player from room to room should instead put themselves back in Objects.
+  #
+  # Each object has a list called 'hitSprites' of sprites which need to tested
+  # for collision with other objects, and an integer called 'damage' which
+  # determines how the test is performed. A positive 'damage' identifies a
+  # player's bullet, which larger values indicating more powerful bullets. A
+  # negative value identifies an enemy, with larger values indicating better
+  # armour.
+  #
+  # The behaviour of the collision detection algorithm is as follows. If a
+  # bullet hits any baddie, its 'damage' value is set to zero. If the sum of the
+  # bullet's and the baddie's 'damage' values is non-negative, the baddie's
+  # 'damage' value is also set to zero. In a subsequent frame, the 'think'
+  # method can compare the 'damage' value to zero to determine whether a
+  # collision occurred.
+  GLOBAL Objects = []
+
+  GLOBAL CurrentRoom = "Start"
+  GLOBAL PreviousRoom = "None"
+  GLOBAL HasVisited = []
+  FOR room= IN Rooms { GLOBAL HasVisited[room] = FALSE }
+  GLOBAL HasVisited[CurrentRoom] = TRUE
+
+  # Number of Mace power-ups. This number decays gradually as the Maces are
+  # damaged and is therefore not necessarily an integer.
+  GLOBAL NumMaces = 0
+
+  GLOBAL ShipSp = SPRITE(ShipRight) # Player's ship.
+  MOVE ShipSp TO (296, 288)
+
+  GLOBAL Energy = 1.0
+  GLOBAL EnergyBarSp = SPRITE(EnergyBar) SIZE (128, 16)
+  MOVE EnergyBarSp TO (8, 8)
+  GLOBAL BlackBarSp = SPRITE(BlackBar) SIZE (128, 16)
+
+  GLOBAL Score = 0
+  GLOBAL ScoreSps = []
+  FOR i= IN 6 {
+    GLOBAL ScoreSps[i] = SPRITE(DigitPictures[0])
+    MOVE ScoreSps[i] TO (616-16*i, 8)
+  }
+  
+  # Currently selected special weapon is initialised to first available weapon.
+  FOR =weapon IN Weapons {
+    GLOBAL CurrentWeapon = weapon
+    BREAK
+  }
+  GLOBAL WeaponBackSp = SPRITE(BlackBar) SIZE (24, 24)
+  MOVE WeaponBackSp TO (564, 452)
+  GLOBAL WeaponSp = SPRITE(CurrentWeapon.picture)
+  MOVE WeaponSp TO (568, 456)
+  GLOBAL WeaponCounts = []
+  FOR =weapon IN Weapons { GLOBAL WeaponCounts[weapon.picture] = weapon.count }
+  GLOBAL WeaponCountSps = []
+  FOR i= IN 2 {
+    GLOBAL WeaponCountSps[i] = SPRITE(DigitPictures[0])
+    MOVE WeaponCountSps[i] TO (616-16*i, 456)
+  }
+
+  GLOBAL JustFired = TRUE # Controls auto-repeat of special weapons.
+  GLOBAL ReloadTimer = 0 # Controls player's rate of fire.
+  GLOBAL RoomTimer = 0 # How long we've been in the room.
+
+  # Main game loop.
+  WHILE Energy>0 AND NOT KEYS.Escape {
+    GLOBAL RoomTimer = RoomTimer + 1
+
+    # Display a new room if necessary.
+    IF CurrentRoom!=PreviousRoom {
+      GLOBAL PreviousRoom = CurrentRoom
+      IF NOT HasVisited[CurrentRoom] {
+        GLOBAL Score = Score + 1000
+        GLOBAL HasVisited[CurrentRoom] = TRUE
+      }
+      FOR y= IN 15 { FOR x= IN 20 {
+        SET BackSp[y][x].Picture = CharToPicture[Rooms[CurrentRoom][y][x]]
+      }}
+      oldObjects = Objects
+      GLOBAL Objects = []
+      FOR =obj IN oldObjects { obj.hide(obj) }
+      FOR =obj IN Rooms[CurrentRoom].Spawn { obj[0](obj) }
+      GLOBAL RoomTimer = 0
+    }
+
+    # Move the player.
+    dx = 0
+    IF KEYS.LetterZ { dx = dx - 16 }
+    IF KEYS.LetterX { dx = dx + 16 }
+    IF dx<0 { SET ShipSp.Picture = ShipLeft } ELSE {
+      IF dx>0 { SET ShipSp.Picture = ShipRight }
+    }
+    IF dx<>0 {
+      MOVE ShipSp BY (dx, 0)
+      IF HitsBack(ShipSp, SolidPictures) { MOVE ShipSp BY (-dx, 0) }
+    }
+    dy = 16
+    IF KEYS.Slash OR KEYS.Shift { dy = -16 }
+    IF dy<>0 {
+      MOVE ShipSp BY (0, dy)
+      IF HitsBack(ShipSp, SolidPictures) { MOVE ShipSp BY (0, -dy) }
+    }
+
+    # Fire a bullet if necessary.
+    GLOBAL ReloadTimer = ReloadTimer - 1
+    IF ReloadTimer<0 AND KEYS.Enter {
+      GLOBAL ReloadTimer = 3
+      IF ShipSp.Picture==ShipLeft {
+        sp = SPRITE(BulletLeft)
+        MOVE sp TO (ShipSp.X, ShipSp.Y+17)
+      } ELSE {
+        sp = SPRITE(BulletRight)
+        MOVE sp TO (ShipSp.X+16, ShipSp.Y+17)
+      }
+      GLOBAL Objects[LEN Objects] = [
+        think = BulletThink,
+        hide = HideSp,
+        hitSprites = [sp],
+        damage = 1,
+        sp = sp
+      ]
+    }
+
+    # Select and/or fire a special weapon if necessary.
+    FOR =weapon IN Weapons {
+      IF KEYS[weapon.key] { GLOBAL CurrentWeapon = weapon }
+    }
+    IF KEYS.Space {
+      IF NOT JustFired {
+        picture = CurrentWeapon.picture
+        IF WeaponCounts[picture]>0 {
+          GLOBAL WeaponCounts[picture] = WeaponCounts[picture] - 1
+          CurrentWeapon.fire()
+        }
+      }
+      GLOBAL JustFired = TRUE
+    } ELSE {
+      GLOBAL JustFired = FALSE
+    }
+
+    # Maybe spawn a baddie.
+    FOR try= IN 10 {
+      IF LEN Objects < 100 AND RANDOM<0.0001*RoomTimer {
+        x = FLOOR(20*RANDOM) y = FLOOR(15*RANDOM)
+        IF SpawnPictures[BackSp[y][x].Picture] {
+          IF ABS(x*32-ShipSp.X-8)>128 OR ABS(y*32-ShipSp.Y)>128 {
+            MakeBaddie(x, y)
+          }
+        }
+      }
+    }
+
+    # Process the objects.
+    oldEnergy = Energy
+    oldObjects = Objects
+    GLOBAL Objects = []
+    FOR =obj IN oldObjects { obj.think(obj) }
+    IF Energy<oldEnergy {
+      SET WINDOW.R = 0.5
+    } ELSE {
+      SET WINDOW.R = 0
+    }
+
+    # Do collision detection.
+    FOR bId=bObj IN Objects { IF bObj.damage>0 { FOR =bSp IN bObj.hitSprites {
+      FOR eId=eObj IN Objects { IF eObj.damage<0 { FOR =eSp IN eObj.hitSprites {
+        IF HitsSprite(bSp, eSp) {
+          IF bObj.damage+eObj.damage>=0 {
+            GLOBAL Objects[eId].damage = 0
+          }
+          GLOBAL Objects[bId].damage = 0
+          BREAK BREAK BREAK BREAK
+        }
+      }}}
+    }}}
+
+    # Update status display.
+    RESIZE BlackBarSp TO (1 MAX 128*(1.0-Energy), 16)
+    MOVE BlackBarSp TO (EnergyBarSp.X+EnergyBarSp.W-BlackBarSp.W, EnergyBarSp.Y)
+    SetDigits(ScoreSps, Score)
+    SET WeaponSp.Picture = CurrentWeapon.picture
+    SetDigits(WeaponCountSps, WeaponCounts[CurrentWeapon.picture])
+
+    WAIT
+
+    # Check for exits.
+    IF HitsBack(ShipSp, ExitPictures) {
+      dir = "ExitMid"
+      IF ShipSp.X<32 {
+        dir = "ExitLeft"
+        MOVE ShipSp TO (560, )
+      } ELIF ShipSp.X+ShipSp.W>608 {
+        dir = "ExitRight"
+        MOVE ShipSp TO (32, )
+      } ELIF ShipSp.Y<32 {
+        dir = "ExitUp"
+        MOVE ShipSp TO (, 416)
+      } ELIF ShipSp.Y+ShipSp.H>448 {
+        dir = "ExitDown"
+        MOVE ShipSp TO (, 32)
+      } ELSE {
+        dir = "ExitMid"
+      }
+      GLOBAL CurrentRoom = Rooms[CurrentRoom][dir]
+    }
+  }
+  WHILE KEYS.Escape { WAIT }
+  
+  # Death sequence
+  HIDE ShipSp
+  SET WINDOW.R = 0
+  FOR i= IN 50 { MakeExplosion(ShipSp.X+24, ShipSp.Y+16, 16, chain=3) }
+  FOR i= IN 500 {
+    IF KEYS.Escape OR KEYS.Space { BREAK }
+    GLOBAL RoomTimer = RoomTimer + 1
+
+    # Process the objects.
+    oldObjects = Objects
+    GLOBAL Objects = []
+    FOR =obj IN oldObjects { obj.think(obj) }
+
+    WAIT
+  }
+  WHILE KEYS.Escape { WAIT }
+}
+
+################################################################################
+# Collision detection utilities.
+
+# Returns TRUE if the specified sprites overlap, otherwise FALSE.
+DEF HitsSprite(sp1, sp2) {
+  IF sp1.X+sp1.W <= sp2.X { RETURN FALSE }
+  IF sp1.Y+sp1.H <= sp2.Y { RETURN FALSE }
+  IF sp1.X >= sp2.X+sp2.W { RETURN FALSE }
+  IF sp1.Y >= sp2.Y+sp2.H { RETURN FALSE }
+  RETURN TRUE
+}
+
+# Returns TRUE if the specified sprite overlaps a background picture which is in
+# the specified set. The set is represented by a map from pictures to booleans.
+# If 'destroy' is TRUE then the first picture hit, if any, is replaced by a
+# Space.
+DEF HitsBack(sp, set, destroy=FALSE, score=0) {
+  x0 = FLOOR (sp.X/32) x1 = CEIL ((sp.X+sp.W)/32)
+  y0 = FLOOR (sp.Y/32) y1 = CEIL ((sp.Y+sp.H)/32)
+  IF x0<0 OR x1>20 OR y0<0 OR y1>15 { RETURN TRUE }
+  FOR y= IN y1-y0 {
+    row = BackSp[y0+y]
+    FOR x= IN x1-x0 {
+      IF set[row[x0+x].Picture] {
+        IF destroy {
+          SET row[x0+x].Picture = Space
+          GLOBAL Score = Score + score
+        }
+        RETURN TRUE
+      }
+    }
+  }
+  RETURN FALSE
+}
+
+################################################################################
+# Numbers.
+
+# Sets the pictures of the specified digit sprites (which are listed from right
+# to left) so that they show the specified value. The value must be a
+# non-negative integer.
+DEF SetDigits(sps, value) {
+  FOR =sp IN sps {
+    SET sp.Picture = DigitPictures[value%10]
+    value = FLOOR(value / 10)
+  }
+}
+
+################################################################################
+# Things useful to many different kinds of object.
+
+# Hiding routine for one-sprite objects.
+DEF HideSp(obj) { HIDE obj.sp }
+
+# Hiding routine for zero-sprite objects.
+DEF DoNothing(obj) {}
+
+# Appends the specified object to Objects.
+DEF AppendObject(obj) { GLOBAL Objects[LEN Objects] = obj }
+
+################################################################################
+# Thinking routines: bullets and other projectiles.
+
+# Thinking subroutine for player's normal bullets.
+DEF BulletThink(obj) {
+  IF obj.sp.Picture==BulletLeft {
+    MOVE obj.sp BY (-32, 0)
+  } ELSE {
+    MOVE obj.sp BY (32, 0)
+  }
+  IF obj.damage!=0 {
+    IF NOT HitsBack(obj.sp, WeakPictures, destroy=TRUE, score=5) {
+      IF NOT HitsBack(obj.sp, NonPorousPictures) {
+        RETURN AppendObject(obj)
+      }
+    }
+  }
+  MakeExplosion(obj.sp.X+16, obj.sp.Y+4, 2)
+  HIDE obj.sp
+}
+
+# Called when the player fires the bounce weapon.
+DEF FireBounce() {
+  MakeFourBounces(ShipSp.X+24, ShipSp.Y+16, 200)
+}
+
+# Makes four bouncing bullets diverging from the specified point.
+DEF MakeFourBounces(x, y, lifetime) {
+  MakeBounce(x, y, 16, 16, lifetime)
+  MakeBounce(x, y, -16, 16, lifetime)
+  MakeBounce(x, y, 16, -16, lifetime)
+  MakeBounce(x, y, -16, -16, lifetime)
+}
+
+# Makes a new bouncing bullet centred on the specified point.
+DEF MakeBounce(x, y, dx, dy, lifetime) {
+  sp = SPRITE(Bounce)
+  MOVE sp TO (x-8, y-8)
+  AppendObject([
+    think = BounceThink,
+    hide = HideSp,
+    hitSprites = [sp],
+    damage = 3,
+    sp = sp,
+    dx = dx,
+    dy = dy,
+    lifetime = lifetime
+  ])
+}
+
+# Thinking routine for bouncing bullets.
+DEF BounceThink(obj) {
+  MOVE obj.sp BY (obj.dx, 0)
+  IF (
+    HitsBack(obj.sp, WeakPictures, destroy=TRUE, score=5) OR
+    HitsBack(obj.sp, NonPorousPictures)
+  ) {
+    obj.dx = -obj.dx
+    MOVE obj.sp BY (obj.dx, 0)
+  }
+  MOVE obj.sp BY (0, obj.dy)
+  IF (
+    HitsBack(obj.sp, WeakPictures, destroy=TRUE, score=5) OR
+    HitsBack(obj.sp, NonPorousPictures)
+  ) {
+    obj.dy = -obj.dy
+    MOVE obj.sp BY (0, obj.dy)
+  }
+  obj.damage = 3 # Just keeps on going...
+  obj.lifetime = obj.lifetime - 1
+  IF obj.lifetime>=0 { RETURN AppendObject(obj) }
+  # Lifetime expired.
+  HIDE obj.sp
+  FOR i= IN 5 { MakeExplosion(obj.sp.X+8, obj.sp.Y+8, 8) }
+}
+
+# Called when the player fires the time bomb weapon.
+DEF FireTimeBomb() {
+  sp = SPRITE(TimeBomb1)
+  MOVE sp TO (ShipSp.X+16, ShipSp.Y+8)
+  AppendObject([
+    think = TimeBombThink,
+    hide = HideSp,
+    hitSprites = [],
+    damage = 0,
+    sp = sp,
+    timer = 0
+  ])
+}
+
+# Thinking routine for time bombs.
+DEF TimeBombThink(obj) {
+  IF obj.timer<100 {
+    SET obj.sp.Picture = TimeBombPictures[FLOOR(obj.timer/25)]
+    obj.timer = obj.timer + 1
+    RETURN AppendObject(obj)
+  }
+  # We've been triggered.
+  HIDE obj.sp
+  FOR i= IN 20 { MakeExplosion(obj.sp.X+8, obj.sp.Y+8, 8) }
+  MakeFourBounces(obj.sp.X+8, obj.sp.Y+8, 10)
+}
+
+# Called when the player fires the mine weapon.
+DEF FireMine() {
+  sp = SPRITE(Mine)
+  MOVE sp TO (ShipSp.X+16, ShipSp.Y+8)
+  AppendObject([
+    think = MineThink,
+    hide = HideSp,
+    hitSprites = [sp],
+    damage = 4,
+    sp = sp
+  ])
+}
+
+# Thinking routine for mines.
+DEF MineThink(obj) {
+  IF obj.damage!=0 { RETURN AppendObject(obj) }
+  # We've been triggered.
+  HIDE obj.sp
+  FOR i= IN 20 { MakeExplosion(obj.sp.X+8, obj.sp.Y+8, 8) }
+  MakeFourBounces(obj.sp.X+8, obj.sp.Y+8, 10)
+}
+
+# Makes a new enemy homing bullet centred on the specified point.
+DEF MakeHoming(x, y){
+  sp = SPRITE(HomingBlob)
+  MOVE sp TO (x-8, y-8)
+  AppendObject([
+    think = HomingThink,
+    hide = HideSp,
+    hitSprites = [sp],
+    damage = -1,
+    sp = sp
+  ])
+}
+
+# Thinking subroutine for enemy's homing bullets.
+DEF HomingThink(obj) {
+  dx = ShipSp.X-obj.sp.X+16 dy = ShipSp.Y-obj.sp.Y+8
+  r = SQRT(dx*dx + dy*dy + 8)
+  MOVE obj.sp BY (8*dx/r, 8*dy/r)
+  IF HitsSprite(obj.sp, ShipSp) {
+    GLOBAL Energy = Energy - 0.1
+  } ELSE {
+    IF obj.damage!=0 AND NOT HitsBack(obj.sp, NonPorousPictures) {
+      RETURN AppendObject(obj)
+    }
+  }
+  IF obj.damage==0 { GLOBAL Score = Score + 5 }
+  MakeExplosion(obj.sp.X+16, obj.sp.Y+4, 2)
+  HIDE obj.sp
+}
+
+################################################################################
+# Thinking routines: explosions and other cosmetic things
+
+# Makes an explosion centred on the specified position with a random velocity of
+# roughly the specified size.
+DEF MakeExplosion(x, y, scatter, chain=1) {
+  sp = SPRITE(ExplosionPictures[0])
+  MOVE sp TO (x-16, y-16)
+  AppendObject([
+    think = ExplosionThink,
+    hide = HideSp,
+    hitSprites = [],
+    damage = 0,
+    sp = sp,
+    timer = 2*RANDOM,
+    dx = (2*RANDOM-1)*scatter,
+    dy = (2*RANDOM-1)*scatter,
+    chain = chain
+  ])
+}
+
+# Thinking routine for explosions.
+DEF ExplosionThink(obj) {
+  MOVE obj.sp BY (obj.dx, obj.dy)
+  obj.timer = obj.timer + 0.5
+  IF obj.timer<LEN ExplosionPictures {
+    SET obj.sp.Picture = ExplosionPictures[FLOOR obj.timer]
+    RETURN AppendObject(obj)
+  }
+  HIDE obj.sp
+  chain = obj.chain - 1
+  IF chain>0 AND RANDOM<0.5 {
+    FOR i= IN 5 { MakeExplosion(obj.sp.X+16, obj.sp.Y+16, 8, chain=chain) }
+  }
+}
+
+################################################################################
+# Thinking routines: power-ups.
+
+# Thinking routine for power-ups (before they've been collected).
+DEF PowerUpThink(obj) {
+  MOVE obj.sp BY (0, 4)
+  IF HitsBack(obj.sp, NonPorousPictures) {
+    MOVE obj.sp BY (0, -4)
+  }
+  IF NOT HitsSprite(obj.sp, ShipSp) {
+    RETURN AppendObject(obj)
+  }
+  # We've been picked up by the player.
+  HIDE obj.sp
+  PowerUps[obj.sp.Picture].pickup()
+}
+
+# Called when a Mace is picked up.
+DEF MakeMace() {
+  GLOBAL NumMaces = NumMaces+1 MIN 5
+  sp = SPRITE(Mace)
+  MaceThink([
+    think = MaceThink,
+    hide = AppendObject,
+    hitSprites = [sp],
+    damage = 2,
+    sp = sp,
+    maceNum = CEIL NumMaces - 1
+  ])
+}
+
+# Thinking routine for Mace.
+DEF MaceThink(obj) {
+  cossin = Trig_cossin(RoomTimer*0.2 + 0.8*Trig_pi*obj.maceNum)
+  MOVE obj.sp TO (ShipSp.X+8 + 64*cossin[0], ShipSp.Y + 64*cossin[1])
+  IF HitsBack(obj.sp, WeakPictures, destroy=TRUE, score=5) {}
+  IF obj.damage==0 {
+    GLOBAL NumMaces = NumMaces * 0.95
+    MakeExplosion(obj.sp.X+16, obj.sp.Y+16, 8)
+  }
+  obj.damage = 2 # Just keeps on going...
+  IF obj.maceNum<NumMaces { RETURN AppendObject(obj) }
+  HIDE obj.sp
+}
+
+# Called when you pick up a Medikit.
+DEF Heal() { GLOBAL Energy = Energy+0.1 MIN 1.0 }
+
+# Called when you pick up a box of ammunition.
+DEF GetAmmo() {
+  weapon = Weapons[FLOOR(RANDOM*LEN(Weapons))]
+  picture = weapon.picture
+  GLOBAL WeaponCounts[picture] = WeaponCounts[picture] + weapon.count
+}
+
+################################################################################
+# Thinking routines: enemies.
+
+# Makes a baddie in the specified square.
+DEF MakeBaddie(x, y) {
+  sp = SPRITE(BaddiePictures[FLOOR(RANDOM * LEN BaddiePictures)])
+  MOVE sp TO (32*x, 32*y)
+  AppendObject([
+    think = BaddieThink,
+    hide = HideSp,
+    hitSprites = [sp],
+    damage = -1,
+    sp = sp
+  ])
+}
+
+# Makes a baddie generator.
+DEF MakeBaddieGenerator(obj) {
+  AppendObject(obj + [
+    think = BaddieGeneratorThink,
+    hide = DoNothing,
+    hitSprites = [],
+    damage = 0
+  ])
+}
+
+# Thinking routine for a baddie generator. Makes a baddie every frame until its
+# timer runs out.
+DEF BaddieGeneratorThink(obj) {
+  MakeBaddie(obj.x, obj.y)
+  obj.timer = obj.timer - 1
+  IF obj.timer>0 { AppendObject(obj) }
+}
+
+# Thinking subroutine for simple baddies.
+DEF BaddieThink(obj) {
+  dx = 16*RANDOM-8 + (-2 MAX ShipSp.X+8-obj.sp.X MIN 2)
+  dy = 16*RANDOM-8 + (-2 MAX ShipSp.Y+8-obj.sp.Y MIN 2)
+  MOVE obj.sp BY (dx, 0)
+  IF HitsBack(obj.sp, NonPorousPictures) { MOVE obj.sp BY (-dx, 0) }
+  MOVE obj.sp BY (0, dy)
+  IF HitsBack(obj.sp, NonPorousPictures) { MOVE obj.sp BY (0, -dy) }
+  IF HitsSprite(obj.sp, ShipSp) { GLOBAL Energy = Energy - 0.01 }
+  IF obj.damage!=0 { RETURN AppendObject(obj) }
+  FOR i= IN 5 { MakeExplosion(obj.sp.X+16, obj.sp.Y+16, 8) }
+  # We've been shot! Maybe spawn a power-up.
+  HIDE obj.sp
+  GLOBAL Score = Score + 10
+  pp = RANDOM
+  FOR pic=prop IN PowerUps {
+    pp = pp - prop.probability
+    IF pp<0 {
+      psp = SPRITE(pic)
+      MOVE psp TO (obj.sp.X, obj.sp.Y)
+      AppendObject([
+        think = PowerUpThink,
+        hide = HideSp,
+        hitSprites = [],
+        damage = 0,
+        sp = psp
+      ])
+      BREAK
+    }
+  }
+}
+
+# Spawns a new Turret.
+DEF MakeTurret(obj) {
+  IF obj.isRight {
+    sp = SPRITE(TurretRight1)
+  } ELSE {
+    sp = SPRITE(TurretLeft1)
+  }
+  MOVE sp TO (obj.x*32, obj.y*32)
+  AppendObject([
+    think = TurretThink,
+    hide = HideSp,
+    hitSprites = [sp],
+    damage = -2,
+    sp = sp,
+    isRight = obj.isRight,
+    fireRate = obj.fireRate
+  ])
+}
+
+DEF TurretThink(obj) {
+  phase = ABS(RoomTimer%50 - 25)
+  # Surely the following can be done better...
+  IF phase<5 {
+    IF RANDOM<obj.fireRate {
+      IF obj.isRight {
+        x = obj.sp.X+64
+        SET obj.sp.Picture = TurretRight4
+      } ELSE {
+        x = obj.sp.X
+        SET obj.sp.Picture = TurretLeft4
+      }
+      MakeHoming(x, obj.sp.Y)
+    } ELSE {
+      IF obj.isRight {
+        SET obj.sp.Picture = TurretRight3
+      } ELSE {
+        SET obj.sp.Picture = TurretLeft3
+      }
+    }
+    space = Space
+  } ELIF phase<8 {
+    IF obj.isRight {
+      SET obj.sp.Picture = TurretRight2
+    } ELSE {
+      SET obj.sp.Picture = TurretLeft2
+    }
+    space = Space
+  } ELSE {
+    IF obj.isRight {
+      SET obj.sp.Picture = TurretRight1
+    } ELSE {
+      SET obj.sp.Picture = TurretLeft1
+    }
+    space = SolidSpace
+  }
+  IF obj.damage==0 { space = Space }
+  x = obj.sp.X/32 y = obj.sp.Y/32
+  FOR dx= IN 2 { FOR dy= IN 2 {
+    SET BackSp[y+dy][x+dx].Picture = space
+  }}
+  IF obj.damage!=0 { RETURN AppendObject(obj) }
+  HIDE obj.sp
+  FOR i= IN 20 { MakeExplosion(obj.sp.X+32, obj.sp.Y+32, 8, chain=2) }
+  GLOBAL Score = Score + 100
+}
+
+# Spawns a new cyclotron.
+DEF MakeCyclotron(obj) {
+  IF obj.isBig {
+    sp = SPRITE(Bicyclotron)
+  } ELSE {
+    sp = SPRITE(Cyclotron)
+  }
+  MOVE sp TO (32*obj.x, 32*obj.y)
+  AppendObject([
+    think = CyclotronThink,
+    hide = HideSp,
+    hitSprites = [sp],
+    damage = -3,
+    sp = sp,
+    speed = obj.speed,
+    angle = 2*Trig_pi*RANDOM
+  ])
+}
+
+# Thinking routine for cyclotron.
+DEF CyclotronThink(obj) {
+  obj.angle = obj.angle + 0.2
+  cossin = Trig_cossin(obj.angle)
+  dx = obj.speed*cossin[0]; dy = obj.speed*cossin[1]
+  MOVE obj.sp BY (dx, 0)
+  IF HitsBack(obj.sp, SolidPictures) {
+    MOVE obj.sp BY (-dx, 0)
+    obj.angle = Trig_pi - obj.angle
+  }
+  MOVE obj.sp BY (0, dy)
+  IF HitsBack(obj.sp, SolidPictures) {
+    MOVE obj.sp BY (0, -dy)
+    obj.angle = -obj.angle
+  }
+  IF HitsSprite(obj.sp, ShipSp) {
+    IF obj.sp.Picture==Bicyclotron {
+      GLOBAL Energy = Energy - 0.6
+    } ELSE {
+      GLOBAL Energy = Energy - 0.2
+    }
+    obj.damage = 0
+  }
+  IF obj.damage!=0 { RETURN AppendObject(obj) }
+  # We've been killed.
+  HIDE obj.sp
+  x = obj.sp.X + 0.5*obj.sp.W; y = obj.sp.Y + 0.5*obj.sp.H
+  FOR i= IN 30 { MakeExplosion(x, y, 20) }
+  GLOBAL Score = Score + 200
+}
+
+# Spawn a new fireball.
+DEF MakeFireball(obj) {
+  sp = SPRITE(Explosion1)
+  MOVE sp TO (32*obj.x, 32*obj.y)
+  AppendObject([
+    think = FireballThink,
+    hide = HideSp,
+    hitSprites = [sp],
+    damage = -2,
+    sp = sp,
+    dx = 8, dy = 6
+  ])
+}
+
+DEF FireballThink(obj) {
+  MOVE obj.sp BY (obj.dx, obj.dy)
+  IF HitsBack(obj.sp, NonPorousPictures) {
+    MOVE obj.sp BY (-obj.dx, -obj.dy)
+    WHILE TRUE {
+      dx = RANDOM-0.5; dy = RANDOM-0.5
+      r = SQRT(dx*dx + dy*dy)
+      IF r<1 AND r!=0 { BREAK }
+    }
+    obj.dx = 10*dx/r; obj.dy = 10*dy/r
+  }
+  IF RANDOM<0.5 { MakeExplosion(obj.sp.X+16, obj.sp.Y+16, 4) }
+  IF HitsSprite(obj.sp, ShipSp) { GLOBAL Energy = Energy - 0.05 }
+  IF obj.damage!=0 { RETURN AppendObject(obj) }
+  # We've been shot.
+  HIDE obj.sp
+  FOR i= IN 15 { MakeExplosion(obj.sp.X+16, obj.sp.Y+16, 8, chain=2) }
+  GLOBAL Score = Score + 200
+}
+
+# Spawns a new package, and sets the four spaces it covers to "PorousSpace".
+# When shot, the package spawns additional baddies defined by 'obj.Spawn' and
+# sets the four squares it covers to "Space".
+DEF MakePackage(obj) {
+  sp = SPRITE(Package)
+  MOVE sp TO (32*obj.x, 32*obj.y)
+  FOR dx= IN 2 { FOR dy= IN 2 {
+    SET BackSp[obj.y+dy][obj.x+dx].Picture = PorousSpace
+  }}
+  AppendObject([
+    think = PackageThink,
+    hide = HideSp,
+    hitSprites = [sp],
+    damage = -1,
+    sp = sp,
+    spawn = obj.Spawn
+  ])
+}
+
+# Thinking subroutine for packages.
+DEF PackageThink(obj) {
+  IF obj.damage!=0 { RETURN AppendObject(obj) }
+  # We've been shot.
+  HIDE obj.sp
+  x = obj.sp.X/32 y = obj.sp.Y/32
+  FOR dx= IN 2 { FOR dy= IN 2 {
+    SET BackSp[y+dy][x+dx].Picture = Space
+  }}
+  FOR =obj IN obj.spawn { obj[0](obj) }
+}

@@ -1,0 +1,468 @@
+#
+# niftris :-)
+#
+# -- andyh (andy at andyh dot co dot uk)
+#                        I  T  L  J  O  S  Z
+GLOBAL piecerotations = [2, 4, 4, 4, 2, 2, 2]
+GLOBAL piecegraphics = [
+    BlueBlock, CyanBlock, GreenBlock, GreyBlock,
+    PurpleBlock, RedBlock, YellowBlock
+]
+
+GLOBAL pieces = [
+ [
+  [
+   [0,1,0,0],
+   [0,1,0,0],
+   [0,1,0,0],
+   [0,1,0,0]
+  ]
+ ],
+ [
+  [
+   [1,1,1],
+   [0,1,0],
+   [0,0,0]
+  ]
+ ],
+ [
+  [
+   [1,0,0],
+   [1,0,0],
+   [1,1,0]
+  ]
+ ],
+ [
+  [
+   [0,0,1],
+   [0,0,1],
+   [0,1,1]
+  ]
+ ],
+ [
+  [
+   [1,1],
+   [1,1]
+  ]
+ ],
+ [
+  [
+   [0,1,1],
+   [1,1,0],
+   [0,0,0]
+  ]
+ ],
+ [
+  [
+   [1,1,0],
+   [0,1,1],
+   [0,0,0]
+  ]
+ ]
+]
+
+DUMP "Set up rotated versions" DUMP "\A/"
+FOR p= IN pieces {
+    # Make copies
+    FOR i= IN piecerotations[p]-1 {
+        GLOBAL pieces[p][i+1] = pieces[p][0]
+    }
+
+    piecesize = LEN(pieces[p][0]) - 1
+
+    # Update the three copies so they are
+    # 90, 180 and 270 degree rotations of the first
+    FOR y= IN pieces[p][0] {
+        FOR x= IN pieces[p][0][y] {
+            IF piecerotations[p] >= 2 {
+                GLOBAL pieces[p][1][y][x] = pieces[p][0][x][piecesize-y]
+            }
+
+            IF piecerotations[p] >= 3 {
+                GLOBAL pieces[p][2][y][x] = pieces[p][0][piecesize-y][piecesize-x]
+            }
+
+            IF piecerotations[p] >= 4 {
+                GLOBAL pieces[p][3][y][x] = pieces[p][0][piecesize-x][y]
+            }
+        }
+    }
+}
+
+DUMP "Set up the playing field \A/"
+GLOBAL blocksize = 16
+GLOBAL fieldheight = 24
+GLOBAL fieldwidth  = 10
+GLOBAL score = 0
+GLOBAL spaceHeldDown = FALSE
+
+RESIZE WINDOW TO (fieldwidth * blocksize + 96, fieldheight * blocksize)
+
+GLOBAL playingfield = []
+FOR y= IN fieldheight {
+    GLOBAL playingfield[y] = []
+    FOR x= IN fieldwidth {
+        GLOBAL playingfield[y][x] = 0
+    }
+}
+
+GLOBAL piecex = fieldwidth / 2
+GLOBAL piecey = 0
+
+GLOBAL nextpiecenum = FLOOR(RANDOM * 7)
+GLOBAL piecenum = -1
+GLOBAL rotation = 0
+
+GLOBAL nextpieceblocks = []
+FOR i= IN 4 {
+    GLOBAL nextpieceblocks[i] = SPRITE(piecegraphics[nextpiecenum])
+}
+
+GLOBAL pieceblocks = []
+
+# These pictures are decimal digits, used to show the score.
+GLOBAL DigitPictures = [
+   Cybernoid_Digit0, Cybernoid_Digit1, Cybernoid_Digit2, Cybernoid_Digit3,
+   Cybernoid_Digit4, Cybernoid_Digit5, Cybernoid_Digit6, Cybernoid_Digit7,
+   Cybernoid_Digit8, Cybernoid_Digit9
+]
+
+DEF SetDigits(sps, value) {
+    FOR =sp IN sps {
+        SET sp.Picture = DigitPictures[value%10]
+        value = FLOOR(value / 10)
+    }
+}
+
+bar = SPRITE(VerticalBar)
+RESIZE bar TO (8, WINDOW.H)
+MOVE bar TO (fieldwidth * blocksize, 0)
+
+scorelabel = SPRITE(Score)
+MOVE scorelabel TO ((fieldwidth+1) * blocksize, blocksize*5)
+
+GLOBAL scoresprites = []
+FOR i= IN 5 {
+    GLOBAL scoresprites[i] = SPRITE(DigitPictures[0])
+    MOVE scoresprites[i] TO ((fieldwidth)*blocksize + (scoresprites[i].W*(5-i)), blocksize*6)
+}
+
+levellabel = SPRITE(Level)
+MOVE levellabel TO ((fieldwidth+1) * blocksize, blocksize*8)
+
+GLOBAL levelsprites = []
+FOR i= IN 2 {
+    GLOBAL levelsprites[i] = SPRITE(DigitPictures[0])
+    MOVE levelsprites[i] TO ((fieldwidth)*blocksize + (levelsprites[i].W*(2-i)), blocksize*9)
+}
+
+#
+# Called when a piece has fallen as far as
+# it can - sets references to the sprites
+# in the playingfield table, so they are
+# counted in IsClear.
+#
+DEF FreezePiece() {
+    FOR b= IN 4 {
+        x = pieceblocks[b].X / blocksize
+        y = pieceblocks[b].Y / blocksize
+
+        GLOBAL playingfield[y][x] = pieceblocks[b]
+    }
+
+    CheckForLines()
+}
+
+#
+# Check for completed horizontal lines on the playing
+# field.
+#
+DEF CheckForLines() {
+    SET WINDOW.R = 0
+    SET WINDOW.G = 0
+    SET WINDOW.B = 0
+
+    line = fieldheight-1
+    completedlines = 0
+
+    # Search for completed lines, and if any,
+    # make the blocks go white for a few frames
+    WHILE (line >= 0) {
+        IF IsCompletedLine(line) {
+            FOR x= IN fieldwidth {
+                IF playingfield[line][x] != 0 {
+                     SET playingfield[line][x].Picture = WhiteBlock
+                }
+            }
+            completedlines = completedlines + 1
+        }
+        line = line - 1
+    }
+
+    IF completedlines == 0 { RETURN }
+
+    GLOBAL score = score + 2**(completedlines-1)
+    SetDigits(scoresprites, score)
+
+    GLOBAL level = FLOOR(score / 25) + 1
+    IF level > 25 { GLOBAL level = 25 }
+    GLOBAL falldelay = 25 - level
+
+    SetDigits(levelsprites, level)
+
+    WAIT WAIT WAIT
+
+    # Remove any completed lines and make the other
+    # lines fall down the field
+    line = fieldheight-1
+    WHILE (line >= 0) {
+        IF IsCompletedLine(line) {
+
+            # Remove the completed line
+            FOR x= IN fieldwidth {
+                IF playingfield[line][x] != 0 {
+                     HIDE playingfield[line][x]
+                }
+            }
+
+            y = line - 1
+            WHILE (y >= 0) {
+                # Move a line from above down
+                FOR x= IN fieldwidth {
+                    IF playingfield[y][x] != 0 {
+                         MOVE playingfield[y][x] BY (0, blocksize)
+                    }
+                }
+                # Update the playing field
+                FOR x= IN fieldwidth {
+                    GLOBAL playingfield[y+1][x] = playingfield[y][x]
+                }
+                y = y - 1
+            }
+
+        } ELSE {
+            # Only decrement this if a line wasn't removed
+            # If one was removed, then everything's shifted
+            # down square already.
+            line = line - 1
+        }
+    }
+}
+
+#
+# Returns true iff the line is full of blocks
+#
+DEF IsCompletedLine(line) {
+    FOR x= IN fieldwidth {
+        IF playingfield[line][x] == 0 {
+            RETURN FALSE
+        }
+    }
+    RETURN TRUE
+}
+
+#
+# Adds a new piece to the top of the playing
+# field. Returns FALSE if there is no room to
+# add this - game over.
+#
+DEF NewPiece() {
+    # Random piece in top centre of playing field
+    GLOBAL piecenum = nextpiecenum
+    GLOBAL nextpiecenum = FLOOR(RANDOM * 7)
+    GLOBAL rotation = 0
+
+    GLOBAL piecex = fieldwidth / 2
+    GLOBAL piecey = 0
+
+    IF IsClear(piecenum, rotation, piecex, piecey)
+    {
+        # Sprites for the current piece
+        GLOBAL pieceblocks = []
+        FOR i= IN 4
+        {
+            GLOBAL pieceblocks[i] = SPRITE(Block)
+            SET pieceblocks[i].Picture = piecegraphics[piecenum]
+            SET nextpieceblocks[i].Picture = piecegraphics[nextpiecenum]
+        }
+
+        ShowNextPiece()
+
+        RETURN TRUE
+    }
+    ELSE
+    {
+        RETURN FALSE
+    }
+}
+
+#
+# Move the block sprites to the positions
+# for the current piece
+#
+DEF ShowPiece() {
+    blocknum = 0
+    FOR y= IN pieces[piecenum][rotation] {
+        FOR x= IN pieces[piecenum][rotation][y] {
+            IF pieces[piecenum][rotation][y][x] == 1 {
+                MOVE pieceblocks[blocknum] TO ((piecex+x)*blocksize,(piecey+y)*blocksize)
+                blocknum = blocknum + 1
+            }
+        }
+    }
+}
+
+#
+# Shows the shape of the piece that's going to appear
+# next, in the top right of the window.
+#
+DEF ShowNextPiece() {
+    blocknum = 0
+    FOR y= IN pieces[nextpiecenum][0] {
+        FOR x= IN pieces[nextpiecenum][0][y] {
+            IF pieces[nextpiecenum][0][y][x] == 1 {
+                MOVE nextpieceblocks[blocknum] TO ((fieldwidth+x+2)*blocksize,(y+1)*blocksize)
+                blocknum = blocknum + 1
+            }
+        }
+    }
+}
+
+#
+# Returns TRUE iff there is room for the piece
+# given by newpiecenum in the rotation and position
+# given by the other parameters.
+#
+DEF IsClear(newpiecenum, newrotation, newpiecex, newpiecey) {
+    FOR y= IN pieces[newpiecenum][newrotation] {
+        FOR x= IN pieces[newpiecenum][newrotation][y] {
+            IF pieces[newpiecenum][newrotation][y][x] == 1 {
+                IF newpiecex + x < 0           { RETURN FALSE }
+                IF newpiecex + x >= fieldwidth { RETURN FALSE }
+
+                IF newpiecey + y < 0            { RETURN FALSE }
+                IF newpiecey + y >= fieldheight { RETURN FALSE }
+
+                IF playingfield[newpiecey + y][newpiecex + x] != 0 {
+                    RETURN FALSE
+                }
+            }
+        }
+    }
+
+    RETURN TRUE
+}
+
+# Game loop
+
+GLOBAL level = 1
+SetDigits(levelsprites, level)
+
+GLOBAL falldelay = 25
+framecounter = 0
+sincerotation = 0
+spacefornewpiece = NewPiece()
+
+WHILE (spacefornewpiece) {
+
+    ShowPiece()
+    WAIT
+
+    # Various things later flash the background
+    # for one frame, so go back to black
+    SET WINDOW.R = 0
+    SET WINDOW.G = 0
+    SET WINDOW.B = 0
+
+    framecounter = framecounter + 1
+    sincerotation = sincerotation + 1
+
+    IF KEYS.LeftArrow {
+        IF IsClear(piecenum, rotation, piecex-1, piecey) {
+            GLOBAL piecex = piecex - 1
+            WAIT
+        }
+        ELSE
+        {
+            SET WINDOW.B = 1
+        }
+    }
+
+    IF KEYS.RightArrow {
+        IF IsClear(piecenum, rotation, piecex+1, piecey) {
+            GLOBAL piecex = piecex + 1
+            WAIT
+        }
+        ELSE
+        {
+            SET WINDOW.B = 1
+        }
+    }
+
+    IF KEYS.LetterA AND sincerotation > 5 {
+        newrotation = rotation + 1
+        IF newrotation >= piecerotations[piecenum] {
+            newrotation = 0
+        }
+
+        IF IsClear(piecenum, newrotation, piecex, piecey) {
+            GLOBAL rotation = newrotation
+            sincerotation = 0
+        }
+        ELSE
+        {
+            SET WINDOW.B = 1
+        }
+    }
+
+    IF KEYS.LetterD AND sincerotation > 5 {
+        newrotation = rotation - 1
+        IF newrotation < 0 {
+            newrotation = piecerotations[piecenum]-1
+        }
+        IF IsClear(piecenum, newrotation, piecex, piecey) {
+            GLOBAL rotation = newrotation
+            sincerotation = 0
+        }
+        ELSE
+        {
+            SET WINDOW.B = 1
+        }
+    }
+
+    # Pieces fall at the rate defined by falldelay,
+    # or you can use down arrow to accelerate the fall
+    # if you're already lined up
+    IF KEYS.DownArrow OR framecounter > falldelay {
+        framecounter = 0
+
+        IF IsClear(piecenum, rotation, piecex, piecey+1) {
+            GLOBAL piecey = piecey + 1
+        }
+        ELSE
+        {
+            SET WINDOW.G = 1
+            ShowPiece()
+            FreezePiece()
+
+            IF NOT NewPiece() {
+                spacefornewpiece = FALSE
+            }
+        }
+    }
+
+    IF KEYS.Space AND NOT spaceHeldDown {
+
+        WHILE IsClear(piecenum, rotation, piecex, piecey+1) {
+            GLOBAL piecey = piecey + 1
+        }
+        GLOBAL spaceHeldDown = TRUE
+    }
+
+    IF NOT KEYS.Space { GLOBAL spaceHeldDown = FALSE }
+}
+
+SET WINDOW.R = 1
+SET WINDOW.G = 0
+SET WINDOW.B = 0
+WAIT

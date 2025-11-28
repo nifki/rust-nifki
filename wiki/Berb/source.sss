@@ -1,0 +1,106 @@
+# Berb's first program
+
+# Small changes by Alistair:
+# - Used a boolean for 'hit', and moved 'hit=FALSE' inside loop.
+# - Filled in answer to "Picture" query and added "ELSE" clause.
+# - Simplified drag as per email (behaviour is unchanged).
+# (Berb, you can remove this comment when you've read it.)
+
+# Wow! The pages look cool now and , even better, I come back
+# And my code has been fixed! NIFKI Rocks!
+
+# [Are you supposed to be able to float through the walls by pushing hard?
+# --Tom]
+
+# That's because the main loop is in the order "bounce, thrust, move, bounce,
+# thrust, move, ...". If you change it to "thrust, bounce, move, thrust,
+# bounce, move, ..." it won't sink in. --Alistair.
+
+MOVE WINDOW TO (0, 0)
+RESIZE WINDOW TO (256, 256)
+
+#man = SPRITE(Rocks_manPNG)
+GLOBAL man = SPRITE(AtomRaft_ball)
+
+shell = SPRITE(AtomRaft_ball)
+RESIZE shell TO (10,10)
+
+
+GLOBAL dx = 0
+GLOBAL dy = 0
+GLOBAL drag= 0.95
+MOVE man TO (WINDOW.W/2, WINDOW.H-30)
+MOVE shell TO (112, 112)
+WHILE(KEYS.Escape != 1) {
+  hit = FALSE
+  IF KEYS.UpArrow { GLOBAL dy = dy - 1 }
+  IF KEYS.DownArrow { GLOBAL  dy = dy + 1 }
+  IF KEYS.LeftArrow { GLOBAL dx = dx - 1 }
+  IF KEYS.RightArrow { GLOBAL dx = dx + 1 }
+
+  MOVE man BY (dx,dy)
+  IF man.X + man.W > WINDOW.W {
+     GLOBAL dx = -dx
+     hit = TRUE
+  }
+  IF man.X < 0 {
+     GLOBAL dx = - dx
+     hit = TRUE
+  }
+  IF man.Y + man.H > WINDOW.H {
+     GLOBAL dy = -dy
+     hit = TRUE
+  }
+  IF man.Y < 0 {
+     GLOBAL dy = -dy
+     hit = TRUE
+  }
+  IF hit {
+     SET man.Picture = AtomRaft_ball2
+  } ELSE {
+     SET man.Picture = AtomRaft_ball
+  }
+
+  GLOBAL dx = dx * drag
+  GLOBAL dy = dy * drag
+
+  WAIT
+}
+
+DEF AgentMove(){
+
+  MOVE man BY (dx,dy)
+  IF man.X + man.W > WINDOW.W {
+     GLOBAL dx = -dx
+     hit = 1
+  }
+  IF man.X < 0 {
+     GLOBAL dx = - dx
+     hit = 1
+  }
+  IF man.Y + man.H > WINDOW.H {
+     GLOBAL dy = -dy
+     hit = 1
+  }
+  IF man.Y < 0 {
+     GLOBAL dy = -dy
+     hit = 1
+  }
+  IF hit == 1 {
+     #man = SPRITE(AtomRaft_ball2)
+  }
+
+  IF dx > 0 {
+    # GLOBAL dx = ABS(dx) * drag
+  }
+  IF dx < 0 {
+    # GLOBAL dx = -(ABS(dx) * drag)
+  }
+  IF dy > 0 {
+     # GLOBAL dy = ABS(dy) * drag
+  }
+  IF dy < 0 {
+     # GLOBAL dy = -(ABS(dy) * drag)
+  }
+
+}

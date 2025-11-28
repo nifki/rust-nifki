@@ -1,0 +1,38 @@
+things = []
+FOR i= IN 100 { things[i] = SPRITE(Rocks_rockPNG) }
+things[LEN things] = SPRITE(Nifki) SIZE (477.5, 174)
+FOR i=sp IN things {
+  things[i] = [
+    x = RANDOM*(2*WINDOW.W - sp.W) - WINDOW.W,
+    y = RANDOM*(2*WINDOW.H - sp.H) - WINDOW.H,
+    z = 2*RANDOM + 2,
+    w = sp.W,
+    h = sp.H,
+    dx = 30*RANDOM - 15,
+    dy = 30*RANDOM - 15,
+    dz = 0.1*RANDOM - 0.05,
+    sp = sp
+  ]
+}
+
+MOVE WINDOW TO (-WINDOW.W/2, -WINDOW.H/2)
+
+WHILE TRUE {
+  FOR i=old IN things {
+    new = old
+    new.x = new.x + new.dx
+    new.y = new.y + new.dy
+    new.z = new.z + new.dz
+    IF (new.x+new.w > WINDOW.W) { new.x = old.x  new.dx = -ABS old.dx }
+    ELSE { IF (new.x < -WINDOW.W) { new.x = old.x  new.dx = ABS old.dx } }
+    IF (new.y+new.h > WINDOW.H) { new.y = old.y  new.dy = -ABS old.dy }
+    ELSE { IF (new.y < -WINDOW.H) { new.y = old.y  new.dy = ABS old.dy } }
+    IF (new.z > 4) { new.z = old.z  new.dz = -ABS old.dz }
+    ELSE { IF (new.z < 2) { new.z = old.z  new.dz = ABS old.dz } }
+    MOVE new.sp TO (new.x/new.z, new.y/new.z)
+    RESIZE new.sp TO (new.w/new.z, new.h/new.z)
+    SET new.sp.Depth = new.z
+    things[i] = new
+  }
+  WAIT
+}

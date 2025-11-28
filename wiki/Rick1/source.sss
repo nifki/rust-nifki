@@ -1,0 +1,32 @@
+s = SPRITE(orangediamond)
+
+x = WINDOW.X + WINDOW.W / 2
+y = WINDOW.Y + WINDOW.H / 2
+dx = 2
+dy = 1
+
+minx = WINDOW.X
+maxx = WINDOW.X + WINDOW.W - s.W - 1
+miny = WINDOW.Y
+maxy = WINDOW.Y + WINDOW.W - s.H - 1
+
+WHILE (TRUE)
+{
+    IF KEYS.LeftArrow  { dx = dx - 1 }
+    IF KEYS.RightArrow { dx = dx + 1 }
+    IF KEYS.DownArrow  { dy = dy + 2 }
+    IF KEYS.UpArrow    { dy = dy - 1 }
+    IF KEYS.Space      { dx = 0  dy = 0 }
+
+    #dy = dy + 0.5
+    x = x + dx
+    y = y + dy 
+
+    IF (x < minx) { x = minx - (x - minx) * 0.9  dx = -dx  *  0.7 }
+    IF (x > maxx) { x = maxx - (x - maxx) * 0.9  dx = -dx * 0.7 }
+    IF (y < miny) { y = miny - (y - miny) * 0.9  dy = -dy * 0.7 }
+    IF (y > maxy) { y = maxy - (y - maxy) * 0.9  dy = -dy * 0.7 }
+
+    MOVE s TO (x, y)
+    WAIT
+}

@@ -1,0 +1,80 @@
+# Recommended values:
+# up to 50 balls in an area of (8, 8)
+# up to 250 balls in an area of (16, 16)
+# up to 1000 balls in an area of (32, 32)
+
+numBalls = 250
+RESIZE WINDOW TO (16, 16)
+
+maxX = WINDOW.W - 1
+maxY = WINDOW.H - 1
+
+# Place the balls at random.
+balls = []
+FOR i= IN numBalls {
+  balls[i] = [
+    x = maxX*RANDOM,
+    y = maxY*RANDOM,
+    dx = 0,
+    dy = 0,
+    sp = SPRITE (ball) SIZE (1, 1)
+  ]
+}
+SET balls[0].sp.Picture = ball2
+
+neighbours = [-2, -1, 0, 1, 2]
+row = []
+FOR x= IN maxX+8 { row[x-4] = [] }
+grid = []
+FOR y= IN maxY+8 { grid[y-4] = row }
+
+WHILE (TRUE) {
+  # Handle ball-ball collisions.
+  collisions = grid
+  # Gradually fill in 'collisions' such that 'collisions[y][x]' is the set
+  # of indices of balls whose centre is in cell (x, y).
+  FOR i= IN balls {
+    xi = balls[i].x + balls[i].dx
+    yi = balls[i].y + balls[i].dy
+    cx = ROUND (xi-2)
+    cy = ROUND (yi-2)
+    FOR ny= IN 5 {
+      row = collisions[cy + ny]
+      FOR nx= IN 5 {
+        cell = row[cx + nx]
+        FOR j= IN cell {
+          x = xi - (balls[j].x+balls[j].dx)
+          y = yi - (balls[j].y+balls[j].dy)
+          r2 = x*x + y*y
+          IF r2<2 {
+            force = 0.05 * (2-r2) * (2-r2) * (1/r2 - 1)
+            f = (0.05 MIN force) / SQRT r2
+            balls[i].dx = balls[i].dx + f*x
+            balls[i].dy = balls[i].dy + f*y
+            balls[j].dx = balls[j].dx - f*x
+            balls[j].dy = balls[j].dy - f*y
+          }
+        }
+      }
+    }
+    collisions[ROUND yi][ROUND xi][i] = []
+  }
+  # Handle gravity and ball-wall collisions and move the balls.
+  FOR i= IN balls {
+    x = 10 * (balls[i].x/maxX - 0.5)
+    gravity = 0.03/maxY * (1 - 2 / (1 + x*x))
+    IF KEYS.Space {
+      balls[i].dy = balls[i].dy - gravity
+    } ELSE {
+      balls[i].dy = balls[i].dy + gravity
+    }
+    x = balls[i].x + balls[i].dx
+    y = balls[i].y + balls[i].dy
+    balls[i].dx = balls[i].dx - 0.2 * ((x MIN 0) + (x-maxX MAX 0))
+    balls[i].dy = balls[i].dy - 0.2 * ((y MIN 0) + (y-maxY MAX 0))
+    balls[i].x = balls[i].x + balls[i].dx
+    balls[i].y = balls[i].y + balls[i].dy
+    MOVE balls[i].sp TO (balls[i].x, balls[i].y)
+  }
+  WAIT
+}

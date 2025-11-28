@@ -1,0 +1,5 @@
+name: See the tutorial (http://goblin.colourcountry.net/apt1002/Nifki%20Tutorial) for the accompanying text
+width: 256
+height: 256
+msPerFrame: 40
+debug: true

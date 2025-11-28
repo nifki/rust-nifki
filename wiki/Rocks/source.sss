@@ -1,0 +1,515 @@
+# A maze game.
+
+showDemos = FALSE
+#showDemos = TRUE
+#mapOrder = "ABCDEFGHIJKLMN" # official
+#mapOrder = "INABCDEFGHJLM" # fiddling
+mapOrder = "GH" # cheating
+
+maps = []
+maps["A"] = [
+    "<>###<>",
+    "><+++><",
+    "#+++++#",
+    "#++A++#",
+    "#+++++#",
+    "<>+++<>",
+    "><###><"
+]
+maps["B"] = [
+    "##########",
+    "#AO  O  +#",
+    "#### #> +#",
+    "   #######"
+]
+maps["C"] = [
+    "  ###  ",
+    "###+###",
+    "#::O::#",
+    "#:#+#:#",
+    "#   A #",
+    "#######"
+]
+maps["D"] = [
+    "<>###<>",
+    "><OOO><",
+    "#O+++O#",
+    "#O+A+O#",
+    "#O+++O#",
+    "<>+++<>",
+    "><###><"
+]
+maps["E"] = [
+    "#######",
+    "#+#+#+#",
+    "#AOOOO#",
+    "#+++++#",
+    "#######"
+]
+maps["F"] = [
+    "#########",
+    "#+::A::+#",
+    "##:O#O:##",
+    "#::<+O::#",
+    "#:#::<#:#",
+    "#:+#::::#",
+    "#########"
+]
+maps["G"] = [
+    "   #######",
+    "   #   OA<",
+    "   #::O+<",
+    "#### O+<",
+    "#   O+<",
+    "#++++<",
+    "####<"
+]
+maps["H"] = [
+    "#######",
+    "#+OOO+#",
+    "##>O<##",
+    "#O+++##",
+    "#O#++ #",
+    "#+# > #",
+    "#  A  #",
+    "#######"
+]
+maps["I"] = [
+    "######",
+    "#++++#",
+    "#+OO+#",
+    "#++++#",
+    "#O+AO#",
+    "#++++#",
+    "#+OO+#",
+    "#++++#",
+    "######"
+]
+maps["J"] = [
+    "##########",
+    "#++OOO+++#",
+    "#OO+OO+OO#",
+    "#+O+++#++#",
+    "#+A++O#++#",
+    "#++O+++++#",
+    "##########"
+]
+maps["K"] = [
+    " ### ",
+    "##O##",
+    "# A:#",
+    "## ##",
+    " #+# ",
+    " ### "
+]
+maps["L"] = [
+    "################",
+    "#AOO: O:O :OO+O#",
+    "#+:#<>+<>+<>+O+#",
+    "#+#+OO>OO>OO>+O#",
+    "#+#OO<O++#++#O+#",
+    "#+#O< + +#++#+O#",
+    "#+#O#:+:<:++#O+#",
+    "#+#+ >:<>##:#+O#",
+    "#+#:#   O O:#O+#",
+    "#+#:#::O:<O>O+O#",
+    "#+#:> O:<OOO>O+#",
+    "#+#::>:<+:++#+O#",
+    "#+>::::+#:++#O+#",
+    "#+:>##:#O##:<+O#",
+    "#::::::::::::::#",
+    "################"
+]
+maps["M"] = [
+    "##############",
+    "#+O#OOOO+OOO+#",
+    "##O#O>++:::+ #",
+    "#AOOO## O  # #",
+    "# #>O+O#O# # #",
+    "#  O>++#+ #OO#",
+    "#+ : ++ :#O++#",
+    "#+>#### # O  #",
+    "#+ O#+#   #  #",
+    "#+ : O ## OOO#",
+    "#+># #  O+::+#",
+    "#+O#   OOOOOO#",
+    "#+:#+++++++++#",
+    "##+###########"
+]
+maps["N"] = [
+    "#########",
+    "#OO+++++#",
+    "#OO+OOOO#",
+    "#OOOOOOO#",
+    "#OOOOOOO#",
+    "#OOOOOOO#",
+    "#OOOOOOO#",
+    "#OOOOOOO#",
+    "#OOOOOOO#",
+    "#OOO+OOO#",
+    "#OO+++OO#",
+    "#OOA+++O#",
+    "#O+  #+O#",
+    "#O++   O#",
+    "#O++:+OO#",
+    "#O+#  +O#",
+    "#O   ++O#",
+    "#OO+:++O#",
+    "#O+  #+O#",
+    "#O++   O#",
+    "#+++:+++#",
+    "#       #",
+    "#########"
+]
+# Feel free to add new levels here.
+
+demos = []
+# Give each map an empty demo.
+FOR mapName= IN maps { demos[mapName]="" }
+IF showDemos {
+  # I'm afraid you have to insert waits for rockfalls manually at the moment.
+  demos["A"] = "URDDLLUUURRDRDDDDLDLLULUU"
+  demos["B"] = "RRRRRRRD"
+  demos["C"] = "RRRUULRDDLLLLUURRUDD"
+  demos["D"] = "DDRLLURRULLURR"
+  demos["E"] = "DUUDRDULRRDUUDRDULRRDUU"
+  demos["F"] = "RRRLDDRDDLLLUUDL-RURUULLLLRDDLDDR"
+  demos["G"] = "LDULLDRDLDLLLDLRRR"
+  demos["H"] = "RRUULULL-------RUURRLLLLRRDDDRLDDLLLU"
+  demos["I"] = "DLLRURRDLRDDLLL-UUUUUURRRDDLL"
+  demos["J"] = "RRDRRRRUUL--RUULLDRDDDLLUULL--UULLDDRLDDR"
+  demos["K"] = "RLDD"
+  demos["L"] = (
+    "DRLDDDDDDDDDDDDRRRRRUURLDDRRRRRRRRLURULURULURULURULURULUR" +
+    "ULURDLLURLLLLDURLLLLDURLLLLLLDDDDDDDDDDDDRRRDRRRRRRRRRUULLR" +
+    "RULLLLLLRRUUURUULLRUUR--LURDDDLRDDLLLDULLDRDLDUUUUUURLRRULL" +
+    "DDDDDDDDLLULDUUUUUR-------------LUUUU"
+  )
+  demos["M"] = (
+    "DDRDRRRRRDDRRDDLRUUURLRURR-LURUUULLR-LDLLURRRRDDDLDLDLDLL" +
+    "UULULDRLUUDRDLRRRUR-LUUUURLLDRULLDRULLLDDLLLDDDDDRDRRDDDRUL" +
+    "RRDLURRDLURRDLURRDLURRDRRLURULLLLLLULUDRDRRRRURUUUURUUUULLL" +
+    "LLLLLDDLLLRUULRDDLDDDDDDDDDRD"
+  )
+  demos["N"] = (
+    "DRDRDDLDLDDRDRDRRLUUDLDLLLLRURLURUULUDRDRRRULRULU" +
+    "URUDLDLLLURLURURRRLULLRULUUUU" +
+    "UUUURRRR"
+  )
+}
+
+WHILE TRUE {
+  FOR =mapName IN mapOrder {
+    playUntilWin(maps[mapName], demo=demos[mapName])
+  }
+  WHILE KEYS.Space { WAIT }
+  CLS
+  RESIZE WINDOW TO (31, 31)
+  MOVE WINDOW TO (-2, -13)
+  FOR y=row IN [
+    "+   + + +  + +  + ++++ +++ ",
+    "+   + + ++ + ++ + +    +  +",
+    "+ + + + + ++ + ++ +++  +++ ",
+    "++ ++ + +  + +  + +    +  +",
+    "+   + + +  + +  + ++++ +  +"
+  ] {
+    FOR x=cell IN row {
+      IF cell=="+" { MOVE SPRITE (wallPNG) SIZE (1, 1) TO (x, y) }
+    }
+  }
+  WHILE NOT KEYS.Space { WAIT }
+  CLS
+  # Throw away all the demos so people can actually play.
+  FOR mapName= IN maps { demos[mapName]="" }
+  BREAK
+}
+
+# Plays the same level repeatedly until the player solves it.
+DEF playUntilWin(map, demo="") {
+  WHILE NOT playLevel(map, demo=demo) {}
+}
+
+# Plays a single level, displays a success or failure screen, and returns TRUE
+# for success and FALSE for failure.
+DEF playLevel(map, demo="") {
+  RESIZE WINDOW TO (12, 12)
+
+  # Define the mapping of characters to pictures.
+  pictures = []
+  pictures[" "] = blankPNG
+  pictures["A"] = blankPNG # This marks the start position.
+  pictures[":"] = earthPNG
+  pictures["+"] = diamondPNG
+  pictures["O"] = rockPNG
+  pictures["#"] = wallPNG
+  pictures["<"] = leftPNG
+  pictures[">"] = rightPNG
+
+  # Construct sprites for the map, count diamonds, and find the start position.
+  bgSprites = []
+  numDiamonds = 0
+
+  FOR y=row IN map {
+    bgSprites[y] = []
+    FOR x=char IN row {
+      sprite = SPRITE (pictures[char]) SIZE (1, 1)
+      MOVE sprite TO (x, y)
+      bgSprites[y][x] = sprite
+      IF char == "A" {
+        manX = x
+        manY = y
+      } ELSE {
+        IF char == "+" {
+          numDiamonds = numDiamonds + 1
+        }
+      }
+    }
+  }
+
+  DUMP numDiamonds DUMP " diamonds to collect\A/"
+  IF demo!="" {
+    DUMP "Playing demo: '" DUMP demo DUMP "'\A/"
+  }
+
+  # Construct a sprite for the man.
+  man = SPRITE (manPNG) SIZE (1, 1)
+
+  # Game loop.
+  dx = 0
+  dy = 0
+  manCount = 0.0
+  bgCount = 0
+  manDead = FALSE
+  demoPos = 0  # Position within the 'demo' string.
+  moves = "" # Moves made so far. This is printed at the end of the level.
+
+  WHILE numDiamonds > 0 AND NOT manDead {
+    # Display a frame.
+    MOVE man TO (manX - dx*manCount, manY - dy*manCount)
+    MOVE WINDOW TO (man.X +0.5 - WINDOW.W/2, man.Y +0.5 - WINDOW.H/2)
+    SET WINDOW.B = bgCount * 0.05
+    WAIT
+
+    # Read the demo or the keyboard, if the man is exactly in a square.
+    IF manCount == 0 {
+      IF demoPos < LEN(demo) {
+        # Get the next move from the demo sequence.
+        key = demo[demoPos]
+        demoPos = demoPos + 1
+        IF key == "L" { dx = -1 }
+        IF key == "R" { dx = 1 }
+        IF key == "U" { dy = -1 }
+        IF key == "D" { dy = 1 }
+      } ELSE {
+        # Get the next move by reading the keyboard.
+        IF KEYS.LeftArrow  { dx = dx - 1 }
+        IF KEYS.RightArrow { dx = dx + 1 }
+        IF KEYS.UpArrow    { dy = dy - 1 }
+        IF KEYS.DownArrow  { dy = dy + 1 }
+        IF dy!=0 { dx = 0 }
+      }
+      
+      # Check what we're about to hit.
+      aheadSprite = bgSprites[manY+dy][manX+dx]
+      ahead = aheadSprite.Picture
+
+      # Is it a diamond?
+      IF ahead == diamondPNG {
+        numDiamonds = numDiamonds - 1
+        ##DUMP numDiamonds DUMP " diamonds left\A/"
+        bgCount = 20
+      }
+
+      # Is it a rock?
+      IF ahead == rockPNG {
+        # Check what we're pushing it into.
+        IF dy == 0 AND bgSprites[manY][manX + 2*dx].Picture == blankPNG {
+          # Push succeeds.
+          SET bgSprites[manY][manX + 2*dx].Picture = rockPNG
+        } ELSE {
+          # Push fails.
+          dx = 0
+          dy = 0
+        }
+      }
+
+      # Is it a wall?
+      IF isWall(ahead) {
+        dx = 0
+        dy = 0
+      }
+
+      # Does the man move?
+      IF dx != 0 OR dy != 0 {
+        manX = manX + dx
+        manY = manY + dy
+        manCount = 1.0
+        # Overwrite the square ahead with a blank.
+        SET aheadSprite.Picture = blankPNG
+        # Record the move.
+        IF dx!=0 {
+          IF dx<0 { key = "L" } ELSE { key = "R" }
+        } ELSE {
+          IF dy<0 { key = "U" } ELSE { key = "D" }
+        }
+        moves = moves + key
+      }
+    }
+
+    # Move the man.
+    IF manCount > 0.0 {
+      manCount = manCount - 0.25
+      IF manCount == 0.0 {
+        # Stop moving.
+        dx = 0
+        dy = 0
+      }
+    }
+
+    # Fade the background.
+    IF bgCount > 0 {
+      bgCount = bgCount - 1
+    }
+
+    # Scan for rocks.
+    manDead = moveRocks(manX, manY, dx, dy, bgSprites) OR KEYS.Escape
+  }
+
+  # We've either won or lost.
+  SET WINDOW.B = 0.0
+  bgSprites = [] # Helps the garbage collector.
+  
+  DUMP "Moves made: " DUMP moves DUMP "\A/"
+#  IF demo=="" { dummy = playLevel(map, demo=moves) }
+  IF numDiamonds == 0 {
+    CLS
+    IF demo=="" { celebrate(diamondPNG) }
+    RETURN TRUE
+  } ELSE {
+    FOR i= IN 20 {
+      MOVE WINDOW BY (0.3*(RANDOM-0.5), 0.3*(RANDOM-0.5))
+      WAIT
+    }
+    CLS
+    celebrate(rockPNG)
+    RETURN FALSE
+  }
+}
+
+# Move all the falling rocks.
+# Returns 'TRUE' if the man dies, otherwise 'FALSE'.
+DEF moveRocks(manX, manY, dx, dy, bgSprites) {
+  # This array of flags is used to ensure rocks only move once each frame.
+  isMoving = []
+  FOR x= IN bgSprites[0] { isMoving[x] = FALSE }
+  
+  # Scan for rocks.
+  FOR y=row IN bgSprites {
+    FOR x=rockSprite IN row {
+      IF rockSprite.Picture == rockPNG {
+        IF isMoving[x] {
+          isMoving[x] = FALSE
+        } ELSE {
+          rowBelow = bgSprites[y+1]
+          belowSprite = rowBelow[x]
+          dests = []
+          dests[x] = TRUE
+          below = belowSprite.Picture
+          IF isLeft(below) AND row[x-1].Picture == blankPNG {
+            # It could fall left.
+            dests[x - 1] = TRUE
+          }
+          IF isRight(below) AND row[x+1].Picture == blankPNG {
+            # It could fall right.
+            dests[x + 1] = TRUE
+          }
+          FOR destX= IN dests {
+            # Is there anything in the way?
+            destSprite = rowBelow[destX]
+            # IF moving into a blank AND the man is not in the way
+            IF (
+              destSprite.Picture == blankPNG
+            ) AND (
+              (destX != manX-dx AND destX != manX) OR 
+              (y+1 != manY-dy AND y+1 != manY AND y != manY-dy AND y != manY)
+            ) {
+              # Move the rock.
+              SET rockSprite.Picture = blankPNG
+              SET destSprite.Picture = rockPNG
+              isMoving[destX] = TRUE
+              # Does it squash the man?
+              IF destX == manX-dx AND y + 2 == manY-dy {
+                RETURN TRUE
+              }
+              # Don't consider any other destination for this rock.
+              BREAK
+            }
+          }
+        }
+      }
+    }
+  }
+  RETURN FALSE
+}
+
+# Define some useful tests.
+DEF isWall(pic) {
+  IF pic == wallPNG { RETURN TRUE }
+  IF pic == leftPNG { RETURN TRUE }
+  IF pic == rightPNG { RETURN TRUE }
+  RETURN FALSE
+}
+
+DEF isLeft(pic) {
+  IF pic == diamondPNG { RETURN TRUE }
+  IF pic == rockPNG { RETURN TRUE }
+  IF pic == leftPNG { RETURN TRUE }
+
+
+  RETURN FALSE
+}
+
+DEF isRight(pic) {
+  IF pic == diamondPNG { RETURN TRUE }
+  IF pic == rockPNG { RETURN TRUE }
+  IF pic == rightPNG { RETURN TRUE }
+  RETURN FALSE
+}
+
+# Runs a little celebration animation.
+DEF celebrate(picture) {
+  MOVE WINDOW TO (0, 0)
+
+  sparks = []
+  FOR count= IN 100 {
+    sparks[count] = [
+      x = WINDOW.W/2 - 0.5,
+      y = WINDOW.H/2 -0.5,
+      dx = (RANDOM - 0.5) * 1,
+      dy = (RANDOM - 0.5) * 1,
+      sprite = SPRITE (picture) SIZE (1, 1)
+    ]
+  }
+
+  WHILE NOT KEYS.Space {
+    count = (count + 1) % 100
+    HIDE sparks[count].sprite
+    sparks[count] = [
+      x = WINDOW.W/2 - 0.5,
+      y = WINDOW.H/2 - 0.5,
+      dx = (RANDOM - 0.5) * 1,
+      dy = (RANDOM - 0.5) * 1,
+      sprite = SPRITE (picture) SIZE (1, 1)
+    ]
+    FOR i=spark IN sparks {
+      spark.x = spark.x + spark.dx
+      spark.y = spark.y + spark.dy
+      spark.dy = spark.dy + 0.01
+      MOVE spark.sprite TO (spark.x, spark.y)
+      sparks[i] = spark
+    }
+    WAIT
+  }
+  
+  CLS
+}

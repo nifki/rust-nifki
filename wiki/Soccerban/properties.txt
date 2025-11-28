@@ -1,0 +1,5 @@
+name: Soccerban
+width: 512
+height: 512
+msPerFrame: 20
+debug: false
