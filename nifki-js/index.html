@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Nifki Demo</title>
+  </head>
+
+  <body style="background-color: white">
+
+    <h1 style="text-align: center">Nifki Demo Applet</h1>
+
+    <center>
+      <canvas
+        id="game"
+        style="width: 768px; height: 768px"
+        tabIndex="1"
+      >
+        The game should be here. Perhaps JavaScript or &lt;canvas&gt; are
+        turned off.
+      </canvas>
+
+    </center>
+
+    <script src="table.js"></script>
+    <script src="value.js"></script>
+    <script src="keys.js"></script>
+    <script src="ops.js"></script>
+    <script src="assembler.js"></script>
+    <script src="interpreter.js"></script>
+    <script src="example.js"></script>
+    <script src="nifki.js"></script>
+    <script>document.getElementById("game").focus();</script>
+
+    <h2>Instructions</h2>
+
+    <p>Click in the game to make sure it has the focus, then use the arrow
+    keys to move the man around. If you ever owned a BBC micro you will know
+    the rules, otherwise you have the fun of working them out. Hint: collect
+    all the diamonds. If you get stuck, press Escape to restart the level, or
+    reload the page to start again from the first level. The levels
+    <em>are</em> all possible, but they get increasingly difficult towards the
+    end. Have fun!</p>
+
+    <h2>What is Nifki?</h2>
+
+    <p>Nifki is a wiki that allows you to write games like this. You can edit
+    the source code and the instructions over the web, then click on a button
+    to get a version of your game that you can embed in any web page. This
+    game is about 500 lines long.</p>
+
+    <p>Nifki was originally written using Java applets, and that version has
+    been <a href="http://nifki.net/">live</a> since about 2006. Meanwhile,
+    Java applets stopped working in most browsers, so we're rewriting using
+    Javascript/HTML5, which is now sufficiently reliable. This is a demo of
+    the new version.</p>
+
+    <p>"We" are mainly Alistair Turnbull and Tom Lynn.</p>
+
+  </body>
+</html>
