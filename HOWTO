@@ -1,4 +1,7 @@
 java -jar compiler.jar wiki/ Rocks
 java -cp wiki/nifki-out/Rocks.jar:nifki-lib.jar org.sc3d.apt.crazon.vm.Main 512 512 30
 
-firefox nifki-js/index.html
+cargo run
+firefox http://localhost:8080
+
+The JSZip library comes from https://github.com/Stuk/jszip
