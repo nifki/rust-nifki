@@ -8,6 +8,7 @@
                                     compiler-error.html
                                     -> /pages/PAGENAME/play
 /pages/PAGENAME/res/IMAGENAME       wiki/PAGENAME/res/IMAGENAME
+/pages/PAGENAME/???.jar             wiki/nifki-out/PAGENAME.jar
 /nifki-lib.jar
 /stylesheet.css
 /tutorial.txt
