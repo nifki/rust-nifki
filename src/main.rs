@@ -55,11 +55,10 @@ impl ph::Route for Nifki {
             return Ok(HttpOkay::Redirect("static/index.html".into()))
         };
         if page == "static" {
-            let Some(filename) = path_iter.next() else {
-                return Err(HttpError::NotFound);
-            };
             let mut path = PathBuf::from("/home/apt1002/nifki/rust-nifki/static");
-            path.push(filename);
+            for filename in path_iter {
+                path.push(filename);
+            }
             return Ok(HttpOkay::File {file: File::open(path)?, content_type: None});
         } else if page == "js" {
             let Some(filename) = path_iter.next() else {
@@ -68,6 +67,8 @@ impl ph::Route for Nifki {
             let mut path = PathBuf::from("/home/apt1002/nifki/rust-nifki/js");
             path.push(filename);
             return Ok(HttpOkay::File {file: File::open(path)?, content_type: Some(ph::content_types::JS)});
+        } else if page == "stylesheet.css" {
+            return Ok(HttpOkay::Chars {data: include_str!("stylesheet.css").into(), content_type: ph::content_types::CSS});
         } else if page == "pages" {
             let Some(pagename) = path_iter.next() else {
                 return Err(HttpError::Invalid);
@@ -81,9 +82,17 @@ impl ph::Route for Nifki {
                     include_str!("templates/play.html"),
                     Box::new([
                         ("name", Box::new(props["name"].clone())),
+                        ("width", Box::new(props["width"].clone())),
+                        ("height", Box::new(props["height"].clone())),
+                        ("msPerFrame", Box::new(props["msPerFrame"].clone())),
+                        ("debug", Box::new(props["debug"].clone())),
                         ("pagename", Box::new(pagename.clone())),
                     ]),
                 ))));
+            } else if let Some(_) = ph::remove_extension(action, "jar") {
+                let mut path = PathBuf::from("/home/apt1002/nifki/wiki/nifki-out");
+                path.push(format!("{}.jar", pagename));
+                return Ok(HttpOkay::Bytes {data: std::fs::read(path)?, content_type: ph::content_types::JAR});
             } else {
                 return Err(HttpError::Invalid);
             }
