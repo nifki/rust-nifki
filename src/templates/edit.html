@@ -1,0 +1,97 @@
+<html>
+ <head>
+  <link rel="stylesheet" type="text/css" href="/stylesheet.css"/>
+  <script language="JavaScript">
+   <!--
+function addText(input, insText) {{
+ input.focus();
+ if (input.createTextRange) {{
+   document.selection.createRange().text += insText;
+ } else if (input.setSelectionRange) {{
+   var start = input.selectionStart;
+   var end = input.selectionEnd;
+   var len = insText.length;
+   input.value =
+     input.value.substr(0, start) + insText + input.value.substr(end);
+   input.setSelectionRange(start+len, start+len);
+ } else {{
+   input.value += insText;
+ }
+}
+function insertCode(text)
+{{
+   var source = document.getElementById("source");
+   addText(source, text);
+}
+   -->
+  </script>
+  <title>Editing "{pagename}"</title>
+ </head>
+ <body>
+  <table class="all" cols="1" rows="1" align="center"><tr><td>
+   <h1 class="logo" align="center">
+    <a href="/">
+     <img src="/images/small-logo.png" alt="Nifki" style="float:left;"/>
+    </a>
+    Editing "{pagename}"
+   </h1>
+   {error_message}
+   <form
+    method="post"
+    action="/pages/{pagename}/save/"
+    enctype="multipart/form-data"
+   >
+    <table cols="4" rows="4" align="center"><tr>
+     <td colspan="4" align="center">
+      <p>Type the program in here:</p>
+      <textarea
+       id="source" name="source"
+       rows="30" cols="80"
+      >{source}</textarea>
+     </td>
+    </tr><tr>
+     <td align="left">
+      Width in pixels:
+      <input name="width" value="{width}" size="5" maxlength="5"/>
+     </td>
+     <td align="left">
+      Height in pixels:
+      <input name="height" value="{height}" size="5" maxlength="5"/>
+     </td>
+     <td align="left">
+      Milliseconds per frame:
+      <input name="msPerFrame" value="{msPerFrame}" size="5" maxlength="5"/>
+     </td>
+     <td align="right">
+      <input type="checkbox" name="debug" value="debug" {debug_checked}/>
+      Show debug output
+     </td>
+    </tr><tr>
+     <td colspan="4" align="left">
+      Tag line:
+      <input name="name" value="{name}" size="80"/>
+     </td>
+    </tr><tr>
+     <td colspan="4" align="right">
+      <input type="submit" name="save" accesskey="S" value="Save as"/>
+      <input name="new_page" value="{new_page}" size="10" maxlength="20"/>
+     </td>
+    </tr></table>
+    <p style="margin-right: 10px;" align="right">
+     <a href="/pages/{pagename}/play/">Cancel changes</a>
+    </p>
+    <div id="gameSprites">
+     <h2 align="center">Pictures attached to this page</h2>
+{image_list}
+     Upload image:
+     <input
+      type="file" accept="image/png"
+      name="uploaded_image" value="{uploaded_image}"
+      size="60"
+     />
+     <input type="submit" name="upload" accesskey="U" value="Upload"/>
+    </div>
+   </form>
+  </td></tr></table>
+ </body>
+</html>
