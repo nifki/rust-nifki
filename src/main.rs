@@ -4,11 +4,30 @@ use std::fs::{File};
 use std::path::{Path, PathBuf};
 
 use petite_http::{self as ph, html, HttpOkay, HttpError};
-use html::{Concat, Template};
+use html::{Escape, Raw, Concat, Template};
 
 // ----------------------------------------------------------------------------
 
 type Properties = HashMap<&'static str, String>;
+
+// ----------------------------------------------------------------------------
+
+/// Appends copies of `pad` to `items` until its length is a multiple of
+/// `group_size`. Then groups the items 'group_size' at a time and returns a list
+/// of groups.
+fn group<T>(items: Vec<T>, group_size: usize, pad: impl Fn() -> T) -> Vec<Vec<T>> {
+    let num_rows = items.len().div_ceil(group_size);
+    let mut ret = Vec::new();
+    let mut iter = items.into_iter();
+    for _ in 0..num_rows {
+        let mut row = Vec::new();
+        for _ in 0..group_size {
+            row.push(iter.next().unwrap_or_else(&pad));
+        }
+        ret.push(row);
+    }
+    ret
+}
 
 // ----------------------------------------------------------------------------
 
@@ -54,6 +73,74 @@ impl Nifki {
         }
         Ok(props)
     }
+
+    fn edit_page(&self, pagename: String, error_message: Option<String>, source: String, properties: Properties, newpage: String) -> ph::Result {
+        // Wrap up 'error_message' in an HTML paragraph.
+        let error_message = if let Some(error_message) = error_message {
+            Template(
+                "<p class=\"error\" align=\"center\">{error_message}</p>",
+                Box::new([("error_message", Box::new(error_message))]),
+            )
+        } else { Template("", Box::new([])) };
+
+        // Compile a list of the images attached to the page.
+        let mut image_list = Vec::new();
+        let mut image_path = self.page_directory(&pagename);
+        image_path.push("res");
+        for dir_entry in image_path.read_dir()? {
+            let image = String::from(dir_entry?.path().file_name().unwrap().to_str().unwrap());
+            if !image.starts_with(".") { image_list.push(image); }
+        }
+        image_list.sort();
+        let image_list: Vec<Box<dyn Escape>> = image_list.into_iter().map(
+            |image| Box::new(Template(
+                include_str!("templates/fragments/edit-image.html"),
+                Box::new([
+                    ("pagename", Box::new(pagename.clone())),
+                    ("image", Box::new(image)),
+                ]),
+            ),
+        ) as Box<dyn Escape>).collect();
+        let image_list: Concat = group(image_list, 5, || Box::new(Raw("     <td></td>\n"))).into_iter().map(
+            |row| {
+                Concat(Box::new([
+                    Box::new(Raw("    <tr>\n")),
+                    Box::new(Concat::from_iter(row.into_iter())) as Box<dyn Escape>,
+                    Box::new(Raw("    </tr>")),
+                ]))
+            }
+        ).collect();
+        let image_list: Box<dyn Escape> = if image_list.0.len() == 0 {
+            Box::new(Raw("   <p align=\"center\">No pictures</p>"))
+        } else {
+            Box::new(Template(
+                "   <table cols=\"5\" rows=\"{num_rows}\" align=\"center\">\n{image_list}\n   </table>",
+                Box::new([
+                    ("num_rows", Box::new(image_list.0.len())),
+                    ("image_list", Box::new(image_list)),
+                ]),
+            ))
+        };
+
+        let is_debug_checked = properties["debug"].parse().map_err(|e| HttpError::Error(Box::new(e)))?;
+
+        return Ok(HttpOkay::Html(Box::new(Template(
+            include_str!("templates/edit.html"),
+            Box::new([
+                ("pagename", Box::new(pagename)),
+                ("error_message", Box::new(error_message)),
+                ("source", Box::new(source)),
+                ("width", Box::new(properties["width"].clone())),
+                ("height", Box::new(properties["height"].clone())),
+                ("msPerFrame", Box::new(properties["msPerFrame"].clone())),
+                ("name", Box::new(properties["name"].clone())),
+                ("debug_checked", Box::new(if is_debug_checked {"checked"} else {""})),
+                ("image_list", image_list),
+                ("new_page", Box::new(newpage)),
+                ("uploaded_image", Box::new("")),
+            ]),
+        ))));
+    }
 }
 
 impl ph::Route for Nifki {
@@ -74,7 +161,6 @@ impl ph::Route for Nifki {
             };
             let mut path = PathBuf::from(&*self.js_root);
             path.push(filename);
-            println!("js path = {:?}", path);
             return Ok(HttpOkay::File {file: File::open(path)?, content_type: Some(ph::content_types::JS)});
         } else if page == "stylesheet.css" {
             return Ok(HttpOkay::Chars {data: include_str!("stylesheet.css").into(), content_type: ph::content_types::CSS});
@@ -116,6 +202,21 @@ impl ph::Route for Nifki {
                         ("pagename", Box::new(pagename.clone())),
                     ]),
                 ))));
+            } else if action == "edit" {
+                let mut source_file = self.page_directory(pagename);
+                source_file.push("source.sss");
+                let source = std::fs::read_to_string(source_file)?;
+                let props: Properties = self.parse_properties(pagename)?;
+                return self.edit_page(pagename.clone(), None, source, props, pagename.clone());
+            } else if action == "res" {
+                let Some(image_name) = path_iter.next() else {
+                    return Err(HttpError::NotFound);
+                };
+                let mut path = PathBuf::from(&*self.wiki_root);
+                path.push(pagename);
+                path.push("res");
+                path.push(image_name);
+                return Ok(HttpOkay::File {file: File::open(path)?, content_type: None});
             } else if let Some(_) = ph::remove_extension(action, "jar") {
                 let mut path = PathBuf::from(&*self.wiki_root);
                 path.push("nifki-out");
