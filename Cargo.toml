@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 petite_http = { git = "https://github.com/mk270/petite_http" }
+textwrap = "0.16.2"

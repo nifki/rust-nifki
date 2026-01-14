@@ -75,7 +75,6 @@ impl Nifki {
     }
 
     fn edit_page(&self, pagename: String, error_message: Option<String>, source: String, properties: Properties, newpage: String) -> ph::Result {
-        println!("edit_page, pagename={:?}", pagename);
         // Wrap up 'error_message' in an HTML paragraph.
         let error_message = if let Some(error_message) = error_message {
             Template(
@@ -94,7 +93,6 @@ impl Nifki {
             if !image.starts_with(".") { image_list.push(image); }
         }
         image_list.sort();
-        println!("image_list = {:#?}", image_list);
         let image_list: Vec<Box<dyn Escape>> = image_list.into_iter().map(
             |image| Box::new(Template(
                 include_str!("templates/fragments/edit-image.html"),
@@ -194,17 +192,37 @@ impl ph::Route for Nifki {
                 return Ok(HttpOkay::Redirect(format!("pages/{}/play", pagename)));
             };
             if action == "play" {
-                return Ok(HttpOkay::Html(Box::new(Template(
-                    include_str!("templates/play.html"),
-                    Box::new([
-                        ("name", Box::new(props["name"].clone())),
-                        ("width", Box::new(props["width"].clone())),
-                        ("height", Box::new(props["height"].clone())),
-                        ("msPerFrame", Box::new(props["msPerFrame"].clone())),
-                        ("debug", Box::new(props["debug"].clone())),
-                        ("pagename", Box::new(pagename.clone())),
-                    ]),
-                ))));
+                let mut path = PathBuf::from(&*self.wiki_root);
+                path.push("nifki-out");
+                path.push(format!("{}.jar", pagename));
+                if path.exists() {
+                    return Ok(HttpOkay::Html(Box::new(Template(
+                        include_str!("templates/play.html"),
+                        Box::new([
+                            ("name", Box::new(props["name"].clone())),
+                            ("width", Box::new(props["width"].clone())),
+                            ("height", Box::new(props["height"].clone())),
+                            ("msPerFrame", Box::new(props["msPerFrame"].clone())),
+                            ("debug", Box::new(props["debug"].clone())),
+                            ("pagename", Box::new(pagename.clone())),
+                        ]),
+                    ))));
+                }
+                let mut path = PathBuf::from(&*self.wiki_root);
+                path.push("nifki-out");
+                path.push(format!("{}.err", pagename));
+                if path.exists() {
+                    let err = std::fs::read_to_string(path)?;
+                    let err = textwrap::fill(&err, 80);
+                    return Ok(HttpOkay::Html(Box::new(Template(
+                        include_str!("templates/compiler-output.html"),
+                        Box::new([
+                            ("pagename", Box::new(pagename.clone())),
+                            ("err", Box::new(err)),
+                        ]),
+                    ))));
+                }
+                return Ok(HttpOkay::Redirect(format!("pages/{}/edit", pagename)));
             } else if action == "edit" {
                 let mut source_file = self.page_directory(pagename);
                 source_file.push("source.sss");
@@ -215,8 +233,7 @@ impl ph::Route for Nifki {
                 let Some(image_name) = path_iter.next() else {
                     return Err(HttpError::NotFound);
                 };
-                let mut path = PathBuf::from(&*self.wiki_root);
-                path.push(pagename);
+                let mut path = self.page_directory(pagename);
                 path.push("res");
                 path.push(image_name);
                 return Ok(HttpOkay::File {file: File::open(path)?, content_type: None});
