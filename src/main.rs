@@ -75,6 +75,7 @@ impl Nifki {
     }
 
     fn edit_page(&self, pagename: String, error_message: Option<String>, source: String, properties: Properties, newpage: String) -> ph::Result {
+        println!("edit_page, pagename={:?}", pagename);
         // Wrap up 'error_message' in an HTML paragraph.
         let error_message = if let Some(error_message) = error_message {
             Template(
@@ -87,11 +88,13 @@ impl Nifki {
         let mut image_list = Vec::new();
         let mut image_path = self.page_directory(&pagename);
         image_path.push("res");
+        std::fs::create_dir_all(&image_path)?;
         for dir_entry in image_path.read_dir()? {
             let image = String::from(dir_entry?.path().file_name().unwrap().to_str().unwrap());
             if !image.starts_with(".") { image_list.push(image); }
         }
         image_list.sort();
+        println!("image_list = {:#?}", image_list);
         let image_list: Vec<Box<dyn Escape>> = image_list.into_iter().map(
             |image| Box::new(Template(
                 include_str!("templates/fragments/edit-image.html"),
