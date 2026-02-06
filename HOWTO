@@ -1,5 +1,5 @@
 java -jar compiler.jar wiki/ Rocks
-java -cp wiki/nifki-out/Rocks.jar:nifki-lib.jar org.sc3d.apt.crazon.vm.Main 512 512 30
+java -cp ../wiki/nifki-out/Rocks.jar:nifki-lib.jar org.sc3d.apt.crazon.vm.Main 512 512 30
 
 cargo run
 firefox http://localhost:8080
