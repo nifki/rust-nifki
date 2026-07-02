@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-petite_http = { git = "https://github.com/mk270/petite_http" }
+petite_http = "1.0.0"
 textwrap = "0.16.2"

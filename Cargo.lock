@@ -121,8 +121,9 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "petite_http"
-version = "0.1.0"
-source = "git+https://github.com/mk270/petite_http#ee94197fc2e062c6ec12f8f7a8a3c7889b5ebeb8"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55e9795826aad26bc3c77ffde99df566a8c42fc854b86ccfe5035b87be6d9c6f"
 dependencies = [
  "html-escape",
  "idna_adapter",
