@@ -6,7 +6,7 @@ After=network.target
 #Environment="NIFKI_WIKI_ROOT=..."
 #Environment="NIFKI_JS_ROOT=..."
 #Environment="NIFKI_STATIC_ROOT=..."
-#Environment="NIFKI_BASE_URL=..."
+Environment="NIFKI_BASE_URL=https://nifki.net/"
 ExecStart=/home/apt1002/nifki/rust-nifki/target/release/nifki-js
 
 [Install]
