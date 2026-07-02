@@ -5,3 +5,9 @@ cargo run
 firefox http://localhost:8080
 
 The JSZip library comes from https://github.com/Stuk/jszip
+
+
+## Compiling every wiki page
+
+cd ../wiki
+for x in $(ls | grep -v nifki-out); do java -jar ../rust-nifki/compiler.jar . $x; done
