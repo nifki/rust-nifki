@@ -2,6 +2,12 @@
 name = "nifki-js"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
+description = "Make your own computer games, or just mess about with everyone else's!"
+repository = "https://github.com/nifki/rust-nifki"
+license = "MIT"
+keywords = ["game", "wiki", "language"]
+categories = ["compilers", "web-programming::http-server", "game-engines"]
 
 [dependencies]
 petite_http = "1.0.0"
