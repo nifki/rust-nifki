@@ -266,6 +266,7 @@ fn main() {
     let js_root = env::var("NIFKI_JS_ROOT").unwrap_or_else(|_| JS_ROOT.to_owned());
     let static_root = env::var("NIFKI_STATIC_ROOT").unwrap_or_else(|_| STATIC_ROOT.to_owned());
     let base_url = env::var("NIFKI_BASE_URL").ok();
+    println!("base_url={:?}", base_url);
     let server = Nifki {
         wiki_root: Path::new(wiki_root.as_str()).into(),
         js_root: Path::new(js_root.as_str()).into(),
